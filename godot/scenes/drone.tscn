@@ -1,0 +1,17 @@
+[gd_scene format=3 uid="uid://bcugfq7pla510"]
+
+[ext_resource type="Script" uid="uid://75vvfy4a17fw" path="res://scripts/drone.gd" id="1_knnud"]
+[ext_resource type="Texture2D" uid="uid://7kqr1mq53myy" path="res://resources/drone.png" id="2_1r4ts"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_ig7tw"]
+radius = 28.62
+
+[node name="Drone" type="RigidBody2D" unique_id=511715060]
+visibility_layer = 2
+script = ExtResource("1_knnud")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=77887856]
+shape = SubResource("CircleShape2D_ig7tw")
+
+[node name="Sprite" type="Sprite2D" parent="." unique_id=364806038]
+texture = ExtResource("2_1r4ts")

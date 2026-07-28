@@ -1,0 +1,27 @@
+[gd_scene format=3 uid="uid://vumo05wb5j7m"]
+
+[ext_resource type="Script" uid="uid://d1ldjwcssu1w7" path="res://scripts/factory.gd" id="1_4nfar"]
+[ext_resource type="Texture2D" uid="uid://ch84087iiq8to" path="res://resources/factory.png" id="2_xidjq"]
+[ext_resource type="Shape2D" uid="uid://jdnfoac6kc3v" path="res://resources/rectangle_shape.tres" id="3_1adwy"]
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_lmr8u"]
+load_path = "res://.godot/imported/factory.png-d4430f311c61af66564f260bd788c1f1.ctex"
+
+[node name="Factory" type="Node2D" unique_id=926477767]
+script = ExtResource("1_4nfar")
+
+[node name="Sprite" type="Sprite2D" parent="." unique_id=433413653]
+texture = ExtResource("2_xidjq")
+
+[node name="SpriteHovered" type="Sprite2D" parent="." unique_id=508792447]
+visible = false
+modulate = Color(0.40392157, 0.10980392, 0.54901963, 1)
+texture = SubResource("CompressedTexture2D_lmr8u")
+
+[node name="Area2D" type="Area2D" parent="." unique_id=1487926958]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=734310601]
+shape = ExtResource("3_1adwy")
+
+[connection signal="mouse_entered" from="Area2D" to="." method="_on_area_2d_mouse_entered"]
+[connection signal="mouse_exited" from="Area2D" to="." method="_on_area_2d_mouse_exited"]

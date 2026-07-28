@@ -1,0 +1,25 @@
+[package]
+name = "dronoid"
+version = "0.1.0"
+authors = ["Primo <primo.contact@mail.fr>"]
+edition = '2024'
+
+[lib]
+doctest = false
+test = false
+
+[[bin]]
+name = "server"
+test = false
+doctest = false
+
+[[test]]
+name = "all"
+
+[dependencies]
+anyhow = "1.0.104"
+futures = "0.3.33"
+log = "0.4.33"
+thiserror = "2.0.19"
+tokio = {version = "1.53.1", features = ["full"]}
+tokio-tungstenite = "0.30.0"
