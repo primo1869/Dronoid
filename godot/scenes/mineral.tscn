@@ -1,0 +1,27 @@
+[gd_scene format=3 uid="uid://d0bhksraj0xh6"]
+
+[ext_resource type="Script" uid="uid://bdkafabr8rxcy" path="res://scripts/mineral.gd" id="1_11fvn"]
+[ext_resource type="Texture2D" uid="uid://bndwt085lpfa4" path="res://resources/mineral.jpg" id="2_8mhvu"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ve3xk"]
+size = Vector2(12.285, 12.11)
+
+[node name="Mineral" type="RigidBody2D" unique_id=792864607]
+input_pickable = true
+script = ExtResource("1_11fvn")
+
+[node name="Normal" type="Sprite2D" parent="." unique_id=1817906435]
+scale = Vector2(0.1, 0.1)
+texture = ExtResource("2_8mhvu")
+
+[node name="Hovered" type="Sprite2D" parent="." unique_id=1803146739]
+visible = false
+modulate = Color(0.4883154, 0.4883154, 0.48831534, 1)
+scale = Vector2(0.1, 0.1)
+texture = ExtResource("2_8mhvu")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1880045747]
+shape = SubResource("RectangleShape2D_ve3xk")
+
+[connection signal="mouse_entered" from="." to="." method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="." to="." method="_on_mouse_exited"]

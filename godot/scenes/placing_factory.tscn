@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://bds8dr36aoxgm"]
+
+[ext_resource type="Texture2D" uid="uid://ch84087iiq8to" path="res://resources/factory.png" id="2_nt8pf"]
+
+[node name="PlacingFactory" type="Sprite2D" unique_id=1322349419]
+modulate = Color(1, 1, 1, 0.38431373)
+texture = ExtResource("2_nt8pf")

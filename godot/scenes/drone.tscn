@@ -1,0 +1,29 @@
+[gd_scene format=3 uid="uid://bcugfq7pla510"]
+
+[ext_resource type="Script" uid="uid://75vvfy4a17fw" path="res://scripts/drone.gd" id="1_knnud"]
+[ext_resource type="Texture2D" uid="uid://7kqr1mq53myy" path="res://resources/drone.png" id="2_1r4ts"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_ig7tw"]
+radius = 19.44
+
+[node name="Drone" type="RigidBody2D" unique_id=1415849759]
+visibility_layer = 2
+input_pickable = true
+script = ExtResource("1_knnud")
+
+[node name="Normal" type="Sprite2D" parent="." unique_id=364806038]
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("2_1r4ts")
+
+[node name="Hovered" type="Sprite2D" parent="." unique_id=410630341]
+visible = false
+modulate = Color(0.62152386, 0.62152386, 0.6215238, 1)
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("2_1r4ts")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=77887856]
+position = Vector2(-0.085, -0.12)
+shape = SubResource("CircleShape2D_ig7tw")
+
+[connection signal="mouse_entered" from="." to="." method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="." to="." method="_on_mouse_exited"]

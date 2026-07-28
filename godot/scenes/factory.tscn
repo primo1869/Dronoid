@@ -1,0 +1,34 @@
+[gd_scene format=3 uid="uid://vumo05wb5j7m"]
+
+[ext_resource type="Script" uid="uid://d1ldjwcssu1w7" path="res://scripts/factory.gd" id="1_4nfar"]
+[ext_resource type="Texture2D" uid="uid://ch84087iiq8to" path="res://resources/factory.png" id="2_xidjq"]
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_lmr8u"]
+load_path = "res://.godot/imported/factory.png-d4430f311c61af66564f260bd788c1f1.ctex"
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_11fvn"]
+size = Vector2(111, 117)
+
+[node name="Factory" type="Area2D" unique_id=1569072322]
+script = ExtResource("1_4nfar")
+
+[node name="Normal" type="Sprite2D" parent="." unique_id=433413653]
+texture = ExtResource("2_xidjq")
+
+[node name="Hovered" type="Sprite2D" parent="." unique_id=508792447]
+visible = false
+modulate = Color(0.40392157, 0.10980392, 0.54901963, 1)
+texture = SubResource("CompressedTexture2D_lmr8u")
+
+[node name="Selected" type="Sprite2D" parent="." unique_id=216576854]
+visible = false
+modulate = Color(0.867764, 0.30616504, 0.7154431, 1)
+texture = SubResource("CompressedTexture2D_lmr8u")
+
+[node name="CollisionPolygon2D" type="CollisionShape2D" parent="." unique_id=1199079032]
+position = Vector2(0.5, -0.5)
+shape = SubResource("RectangleShape2D_11fvn")
+
+[connection signal="input_event" from="." to="." method="_on_input_event"]
+[connection signal="mouse_entered" from="." to="." method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="." to="." method="_on_mouse_exited"]
