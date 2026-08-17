@@ -223,11 +223,18 @@ mod tests {
     async fn test_07_hundred_auths() -> anyhow::Result<()> {
         let (tx, hdl, addr) = bootstrap().await?;
 
-        let mut clients = Vec::new();
-
+        let mut hdls = Vec::new();
         for i in 0..100 {
-            let (client, resp) = authenticated_client(addr, format!("Player{i}")).await?;
-            clients.push(client);
+            let hdl = tokio::spawn(async move {
+                let (mut client, resp) = authenticated_client(addr, format!("Player{i}")).await?;
+                client.close(None).await.unwrap();
+                anyhow::Ok(resp)
+            });
+            hdls.push(hdl);
+        }
+
+        for hdl in hdls {
+            let resp = hdl.await??;
             assert_eq!(true, resp.result);
             assert_eq!("Welcome", resp.text);
             assert_eq!(0., resp.pos_x);

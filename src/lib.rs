@@ -166,15 +166,8 @@ async fn cycle(players: &mut Vec<Player>) {
         i += 1;
     }
 
-    // let new_players: Vec<Player> = players
-    //     .into_iter()
-    //     .enumerate()
-    //     .filter(|(idx, _)| idxs_to_remove.contains(idx))
-    //     .map(|(_, x)| x)
-    //     .collect();
-
-    for idx in idxs_to_remove {
-        players.remove(idx);
+    for idx in idxs_to_remove.iter().rev() {
+        players.remove(*idx);
     }
 }
 
@@ -245,7 +238,7 @@ async fn process(
             }
             Some(maybe_msg) = websocket.next() => {
                 if maybe_msg.is_err() {
-                    log::info!("Error on read");
+                    log::trace!("Error on read");
                     return;
                 }
                 let message = maybe_msg.unwrap();
