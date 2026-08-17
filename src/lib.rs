@@ -37,7 +37,7 @@ pub enum Error {
 type Result<T> = std::result::Result<T, Error>;
 
 pub async fn run(port: u16) -> Result<()> {
-    let (_, rx) = tokio::sync::oneshot::channel::<()>();
+    let (_sd, rx) = tokio::sync::oneshot::channel::<()>();
 
     let tcp_listener = tokio::net::TcpListener::bind(format!("127.0.0.1:{}", port))
         .await
@@ -186,6 +186,7 @@ pub async fn run_custom(
     let mut time_mark = start_time.clone();
     let players_for_loop = Arc::clone(&players);
     tokio::spawn(async move {
+        log::trace!("Main loop is running...");
         loop {
             cycle(players_for_loop.lock().await.as_mut()).await;
             let late_of = (tokio::time::Instant::now() - time_mark).as_secs_f32() / TICK_DURATION;
@@ -202,10 +203,12 @@ pub async fn run_custom(
         let players_for_client = Arc::clone(&players);
         tokio::select! {
             _ = &mut stopper => {
+                log::info!("Received stop signal!");
                 return Ok(());
             }
             Ok((tcp_stream, addr)) = tcp_listener.accept() => {
                 tokio::spawn(async move {
+                    log::trace!("New connection from {}", addr);
                     let maybe_websocket = tokio_tungstenite::accept_async(tcp_stream).await;
                     if maybe_websocket.is_err() {
                         log::info!("Upgrade to websocket failed");
@@ -231,10 +234,9 @@ async fn process(
         tokio::select! {
             Some((keep, server_message)) = receiver.recv() => {
                 let text = serde_json::to_string(&server_message).unwrap();
-                if websocket.send(Message::Text(text.into())).await.is_err()
-                    || !keep {
-                        return;
-                    }
+                if websocket.send(Message::Text(text.into())).await.is_err() || !keep {
+                    return;
+                }
             }
             Some(maybe_msg) = websocket.next() => {
                 if maybe_msg.is_err() {
