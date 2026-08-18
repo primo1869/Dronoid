@@ -3,16 +3,17 @@
 [ext_resource type="Script" uid="uid://1a5au50wqq2o" path="res://scripts/world.gd" id="1_o5qli"]
 [ext_resource type="Texture2D" uid="uid://bndwt085lpfa4" path="res://resources/mineral.jpg" id="2_0wfyh"]
 
-[sub_resource type="LabelSettings" id="LabelSettings_ve3xk"]
-font_size = 20
-
 [sub_resource type="LabelSettings" id="LabelSettings_cfcly"]
 font_size = 50
+
+[sub_resource type="LabelSettings" id="LabelSettings_ve3xk"]
+font_size = 20
 
 [node name="Main" type="Node" unique_id=1250370468]
 
 [node name="World" type="Node2D" parent="." unique_id=642089119 groups=["world"]]
 unique_name_in_owner = true
+visible = false
 script = ExtResource("1_o5qli")
 
 [node name="Camera" type="Camera2D" parent="World" unique_id=1480249821]
@@ -24,7 +25,20 @@ unique_name_in_owner = true
 [node name="UICanvasLayer" type="CanvasLayer" parent="." unique_id=1307947914]
 unique_name_in_owner = true
 
-[node name="UI" type="Control" parent="UICanvasLayer" unique_id=1392656320]
+[node name="InfoLabel" type="Label" parent="UICanvasLayer" unique_id=1289519430]
+unique_name_in_owner = true
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -20.0
+offset_right = 20.0
+offset_bottom = 58.0
+grow_horizontal = 2
+label_settings = SubResource("LabelSettings_cfcly")
+
+[node name="GameUI" type="Control" parent="UICanvasLayer" unique_id=1392656320]
+unique_name_in_owner = true
+visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -34,12 +48,12 @@ grow_vertical = 2
 mouse_filter = 2
 metadata/_edit_use_anchors_ = true
 
-[node name="MineralSprite" type="Sprite2D" parent="UICanvasLayer/UI" unique_id=1012208128]
+[node name="MineralSprite" type="Sprite2D" parent="UICanvasLayer/GameUI" unique_id=1012208128]
 position = Vector2(16.000002, 15)
 scale = Vector2(0.171875, 0.171875)
 texture = ExtResource("2_0wfyh")
 
-[node name="MineralsTextLabel" type="Label" parent="UICanvasLayer/UI" unique_id=1994504654]
+[node name="MineralsTextLabel" type="Label" parent="UICanvasLayer/GameUI" unique_id=1994504654]
 layout_mode = 0
 offset_left = 29.0
 offset_top = 5.0
@@ -48,7 +62,7 @@ offset_bottom = 28.0
 text = "Minerals:"
 label_settings = SubResource("LabelSettings_ve3xk")
 
-[node name="MineralCountLabel" type="Label" parent="UICanvasLayer/UI" unique_id=736463693]
+[node name="MineralCountLabel" type="Label" parent="UICanvasLayer/GameUI" unique_id=736463693]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 149.0
@@ -58,7 +72,7 @@ offset_bottom = 28.0
 text = "?"
 label_settings = SubResource("LabelSettings_ve3xk")
 
-[node name="MessageLabel" type="Label" parent="UICanvasLayer/UI" unique_id=1849850320]
+[node name="MessageLabel" type="Label" parent="UICanvasLayer/GameUI" unique_id=1849850320]
 unique_name_in_owner = true
 modulate = Color(0.6673887, 0.027250476, 0.17311889, 1)
 layout_mode = 0
@@ -66,19 +80,7 @@ offset_top = 30.0
 offset_right = 266.0
 offset_bottom = 62.0
 
-[node name="InfoLabel" type="Label" parent="UICanvasLayer/UI" unique_id=1289519430]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -20.0
-offset_right = 20.0
-offset_bottom = 23.0
-grow_horizontal = 2
-label_settings = SubResource("LabelSettings_cfcly")
-
-[node name="VSplitContainer" type="VSplitContainer" parent="UICanvasLayer/UI" unique_id=626598327]
+[node name="VSplitContainer" type="VSplitContainer" parent="UICanvasLayer/GameUI" unique_id=626598327]
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
@@ -88,90 +90,90 @@ offset_bottom = 456.0
 grow_horizontal = 0
 dragging_enabled = false
 
-[node name="CreationMenu" type="MarginContainer" parent="UICanvasLayer/UI/VSplitContainer" unique_id=2002108649]
+[node name="CreationMenu" type="MarginContainer" parent="UICanvasLayer/GameUI/VSplitContainer" unique_id=2002108649]
 layout_mode = 2
 mouse_filter = 0
 metadata/_edit_use_anchors_ = true
 
-[node name="Panel" type="Panel" parent="UICanvasLayer/UI/VSplitContainer/CreationMenu" unique_id=77544452]
+[node name="Panel" type="Panel" parent="UICanvasLayer/GameUI/VSplitContainer/CreationMenu" unique_id=77544452]
 layout_mode = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="UICanvasLayer/UI/VSplitContainer/CreationMenu" unique_id=1498985273]
+[node name="MarginContainer" type="MarginContainer" parent="UICanvasLayer/GameUI/VSplitContainer/CreationMenu" unique_id=1498985273]
 layout_mode = 2
 
-[node name="VerticalContainer" type="VBoxContainer" parent="UICanvasLayer/UI/VSplitContainer/CreationMenu/MarginContainer" unique_id=276137689]
+[node name="VerticalContainer" type="VBoxContainer" parent="UICanvasLayer/GameUI/VSplitContainer/CreationMenu/MarginContainer" unique_id=276137689]
 layout_mode = 2
 
-[node name="BuildingsLabel" type="Label" parent="UICanvasLayer/UI/VSplitContainer/CreationMenu/MarginContainer/VerticalContainer" unique_id=1795326613]
+[node name="BuildingsLabel" type="Label" parent="UICanvasLayer/GameUI/VSplitContainer/CreationMenu/MarginContainer/VerticalContainer" unique_id=1795326613]
 layout_mode = 2
 text = "Buildings"
 horizontal_alignment = 1
 
-[node name="CreateFactoryButton" type="Button" parent="UICanvasLayer/UI/VSplitContainer/CreationMenu/MarginContainer/VerticalContainer" unique_id=1498910459]
+[node name="CreateFactoryButton" type="Button" parent="UICanvasLayer/GameUI/VSplitContainer/CreationMenu/MarginContainer/VerticalContainer" unique_id=1498910459]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Factory (70 minerals)"
 
-[node name="FactoryMenu" type="MarginContainer" parent="UICanvasLayer/UI/VSplitContainer" unique_id=1345105641]
+[node name="FactoryMenu" type="MarginContainer" parent="UICanvasLayer/GameUI/VSplitContainer" unique_id=1345105641]
 layout_mode = 2
 mouse_filter = 0
 metadata/_edit_use_anchors_ = true
 
-[node name="Panel" type="Panel" parent="UICanvasLayer/UI/VSplitContainer/FactoryMenu" unique_id=1778538029]
+[node name="Panel" type="Panel" parent="UICanvasLayer/GameUI/VSplitContainer/FactoryMenu" unique_id=1778538029]
 layout_mode = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="UICanvasLayer/UI/VSplitContainer/FactoryMenu" unique_id=1454279133]
+[node name="MarginContainer" type="MarginContainer" parent="UICanvasLayer/GameUI/VSplitContainer/FactoryMenu" unique_id=1454279133]
 layout_mode = 2
 
-[node name="VerticalContainer" type="VBoxContainer" parent="UICanvasLayer/UI/VSplitContainer/FactoryMenu/MarginContainer" unique_id=703244806]
+[node name="VerticalContainer" type="VBoxContainer" parent="UICanvasLayer/GameUI/VSplitContainer/FactoryMenu/MarginContainer" unique_id=703244806]
 layout_mode = 2
 size_flags_vertical = 0
 
-[node name="FactoryIdLabel" type="Label" parent="UICanvasLayer/UI/VSplitContainer/FactoryMenu/MarginContainer/VerticalContainer" unique_id=1950465741]
+[node name="FactoryIdLabel" type="Label" parent="UICanvasLayer/GameUI/VSplitContainer/FactoryMenu/MarginContainer/VerticalContainer" unique_id=1950465741]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Select a factory"
 horizontal_alignment = 1
 
-[node name="SpawnDroneButton" type="Button" parent="UICanvasLayer/UI/VSplitContainer/FactoryMenu/MarginContainer/VerticalContainer" unique_id=1442689640]
+[node name="SpawnDroneButton" type="Button" parent="UICanvasLayer/GameUI/VSplitContainer/FactoryMenu/MarginContainer/VerticalContainer" unique_id=1442689640]
 unique_name_in_owner = true
 layout_mode = 2
 disabled = true
 text = "Spawn drone"
 
-[node name="AutoSpawnCheckButton" type="CheckButton" parent="UICanvasLayer/UI/VSplitContainer/FactoryMenu/MarginContainer/VerticalContainer" unique_id=1645532265]
+[node name="AutoSpawnCheckButton" type="CheckButton" parent="UICanvasLayer/GameUI/VSplitContainer/FactoryMenu/MarginContainer/VerticalContainer" unique_id=1645532265]
 unique_name_in_owner = true
 layout_mode = 2
 disabled = true
 text = "Auto spawn"
 
-[node name="HSeparator" type="HSeparator" parent="UICanvasLayer/UI/VSplitContainer/FactoryMenu/MarginContainer/VerticalContainer" unique_id=1251635839]
+[node name="HSeparator" type="HSeparator" parent="UICanvasLayer/GameUI/VSplitContainer/FactoryMenu/MarginContainer/VerticalContainer" unique_id=1251635839]
 layout_mode = 2
 
-[node name="Label2" type="Label" parent="UICanvasLayer/UI/VSplitContainer/FactoryMenu/MarginContainer/VerticalContainer" unique_id=546468757]
+[node name="Label2" type="Label" parent="UICanvasLayer/GameUI/VSplitContainer/FactoryMenu/MarginContainer/VerticalContainer" unique_id=546468757]
 layout_mode = 2
 text = "Refresh Cooldown"
 horizontal_alignment = 1
 
-[node name="RefreshCooldownBar" type="ProgressBar" parent="UICanvasLayer/UI/VSplitContainer/FactoryMenu/MarginContainer/VerticalContainer" unique_id=14180535]
+[node name="RefreshCooldownBar" type="ProgressBar" parent="UICanvasLayer/GameUI/VSplitContainer/FactoryMenu/MarginContainer/VerticalContainer" unique_id=14180535]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="HSeparator2" type="HSeparator" parent="UICanvasLayer/UI/VSplitContainer/FactoryMenu/MarginContainer/VerticalContainer" unique_id=1688195540]
+[node name="HSeparator2" type="HSeparator" parent="UICanvasLayer/GameUI/VSplitContainer/FactoryMenu/MarginContainer/VerticalContainer" unique_id=1688195540]
 layout_mode = 2
 
-[node name="ProgramsLabel" type="Label" parent="UICanvasLayer/UI/VSplitContainer/FactoryMenu/MarginContainer/VerticalContainer" unique_id=449205383]
+[node name="ProgramsLabel" type="Label" parent="UICanvasLayer/GameUI/VSplitContainer/FactoryMenu/MarginContainer/VerticalContainer" unique_id=449205383]
 layout_mode = 2
 text = "Programs"
 horizontal_alignment = 1
 
-[node name="ProgramSelectButton" type="Button" parent="UICanvasLayer/UI/VSplitContainer/FactoryMenu/MarginContainer/VerticalContainer" unique_id=1433841968]
+[node name="ProgramSelectButton" type="Button" parent="UICanvasLayer/GameUI/VSplitContainer/FactoryMenu/MarginContainer/VerticalContainer" unique_id=1433841968]
 unique_name_in_owner = true
 layout_mode = 2
 disabled = true
 text = "-"
 
-[node name="ProgramPickPopup" type="MarginContainer" parent="UICanvasLayer/UI" unique_id=560732796]
+[node name="ProgramPickPopup" type="MarginContainer" parent="UICanvasLayer/GameUI" unique_id=560732796]
 unique_name_in_owner = true
 visible = false
 custom_minimum_size = Vector2(227, 153)
@@ -185,16 +187,72 @@ offset_right = -15.0
 offset_bottom = 498.0
 grow_horizontal = 0
 
-[node name="Panel" type="Panel" parent="UICanvasLayer/UI/ProgramPickPopup" unique_id=917238691]
+[node name="Panel" type="Panel" parent="UICanvasLayer/GameUI/ProgramPickPopup" unique_id=917238691]
 layout_mode = 2
 
-[node name="ProgramList" type="ItemList" parent="UICanvasLayer/UI/ProgramPickPopup" unique_id=901286464]
+[node name="ProgramList" type="ItemList" parent="UICanvasLayer/GameUI/ProgramPickPopup" unique_id=901286464]
 unique_name_in_owner = true
 layout_mode = 2
 
-[connection signal="pressed" from="UICanvasLayer/UI/VSplitContainer/CreationMenu/MarginContainer/VerticalContainer/CreateFactoryButton" to="World" method="_on_create_factory_pressed"]
-[connection signal="pressed" from="UICanvasLayer/UI/VSplitContainer/FactoryMenu/MarginContainer/VerticalContainer/SpawnDroneButton" to="World" method="_on_spawn_drone_button_pressed"]
-[connection signal="pressed" from="UICanvasLayer/UI/VSplitContainer/FactoryMenu/MarginContainer/VerticalContainer/AutoSpawnCheckButton" to="World" method="_on_auto_spawn_check_button_pressed"]
-[connection signal="toggled" from="UICanvasLayer/UI/VSplitContainer/FactoryMenu/MarginContainer/VerticalContainer/AutoSpawnCheckButton" to="World" method="_on_auto_spawn_check_button_toggled"]
-[connection signal="pressed" from="UICanvasLayer/UI/VSplitContainer/FactoryMenu/MarginContainer/VerticalContainer/ProgramSelectButton" to="World" method="_on_program_select_button_pressed"]
-[connection signal="item_activated" from="UICanvasLayer/UI/ProgramPickPopup/ProgramList" to="World" method="_on_program_list_item_activated"]
+[node name="LoginUI" type="CenterContainer" parent="UICanvasLayer" unique_id=137907190]
+unique_name_in_owner = true
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="Panel" parent="UICanvasLayer/LoginUI" unique_id=330615600]
+custom_minimum_size = Vector2(550, 150)
+layout_mode = 2
+
+[node name="PanelContainer" type="MarginContainer" parent="UICanvasLayer/LoginUI" unique_id=1486545557]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="VBoxContainer" type="VSplitContainer" parent="UICanvasLayer/LoginUI/PanelContainer" unique_id=1517764616]
+layout_mode = 2
+dragging_enabled = false
+dragger_visibility = 1
+
+[node name="HBoxContainer" type="HSplitContainer" parent="UICanvasLayer/LoginUI/PanelContainer/VBoxContainer" unique_id=198848045]
+layout_mode = 2
+
+[node name="NicknameLabel" type="Label" parent="UICanvasLayer/LoginUI/PanelContainer/VBoxContainer/HBoxContainer" unique_id=2066580434]
+layout_mode = 2
+text = "Enter nickname"
+
+[node name="NicknameField" type="LineEdit" parent="UICanvasLayer/LoginUI/PanelContainer/VBoxContainer/HBoxContainer" unique_id=1806310346]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+text = "Player"
+
+[node name="HBoxContainer2" type="HSplitContainer" parent="UICanvasLayer/LoginUI/PanelContainer/VBoxContainer" unique_id=2055369904]
+layout_mode = 2
+dragging_enabled = false
+dragger_visibility = 1
+
+[node name="QuitButton" type="Button" parent="UICanvasLayer/LoginUI/PanelContainer/VBoxContainer/HBoxContainer2" unique_id=1497639546]
+custom_minimum_size = Vector2(100, 37)
+layout_mode = 2
+text = "Quit"
+
+[node name="LoginButton" type="Button" parent="UICanvasLayer/LoginUI/PanelContainer/VBoxContainer/HBoxContainer2" unique_id=904572323]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 37)
+layout_mode = 2
+size_flags_horizontal = 8
+text = "Login"
+
+[connection signal="pressed" from="UICanvasLayer/GameUI/VSplitContainer/CreationMenu/MarginContainer/VerticalContainer/CreateFactoryButton" to="World" method="_on_create_factory_pressed"]
+[connection signal="pressed" from="UICanvasLayer/GameUI/VSplitContainer/FactoryMenu/MarginContainer/VerticalContainer/SpawnDroneButton" to="World" method="_on_spawn_drone_button_pressed"]
+[connection signal="pressed" from="UICanvasLayer/GameUI/VSplitContainer/FactoryMenu/MarginContainer/VerticalContainer/AutoSpawnCheckButton" to="World" method="_on_auto_spawn_check_button_pressed"]
+[connection signal="toggled" from="UICanvasLayer/GameUI/VSplitContainer/FactoryMenu/MarginContainer/VerticalContainer/AutoSpawnCheckButton" to="World" method="_on_auto_spawn_check_button_toggled"]
+[connection signal="pressed" from="UICanvasLayer/GameUI/VSplitContainer/FactoryMenu/MarginContainer/VerticalContainer/ProgramSelectButton" to="World" method="_on_program_select_button_pressed"]
+[connection signal="item_activated" from="UICanvasLayer/GameUI/ProgramPickPopup/ProgramList" to="World" method="_on_program_list_item_activated"]
+[connection signal="pressed" from="UICanvasLayer/LoginUI/PanelContainer/VBoxContainer/HBoxContainer2/QuitButton" to="World" method="_on_quit_button_pressed"]
+[connection signal="pressed" from="UICanvasLayer/LoginUI/PanelContainer/VBoxContainer/HBoxContainer2/LoginButton" to="World" method="_on_login_button_pressed"]

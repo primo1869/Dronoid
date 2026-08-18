@@ -186,7 +186,7 @@ pub async fn run_custom(
     let mut time_mark = start_time.clone();
     let players_for_loop = Arc::clone(&players);
     tokio::spawn(async move {
-        log::trace!("Main loop is running...");
+        log::info!("Main loop is running...");
         loop {
             cycle(players_for_loop.lock().await.as_mut()).await;
             let late_of = (tokio::time::Instant::now() - time_mark).as_secs_f32() / TICK_DURATION;
@@ -201,6 +201,10 @@ pub async fn run_custom(
 
     loop {
         let players_for_client = Arc::clone(&players);
+        log::info!(
+            "Server listenning on port {}...",
+            tcp_listener.local_addr().unwrap().port()
+        );
         tokio::select! {
             _ = &mut stopper => {
                 log::info!("Received stop signal!");
