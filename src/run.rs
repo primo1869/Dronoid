@@ -3,25 +3,12 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 
 use crate::{
-    Result,
-    error::Error,
-    game, network,
+    Result, game, network,
     player::Player,
     protocol::{PlayerAction, ServerMessage},
 };
 
 const TICK_DURATION: f32 = 0.1;
-
-pub async fn run(port: u16) -> Result<()> {
-    let (_sd, rx) = tokio::sync::oneshot::channel::<()>();
-
-    let tcp_listener = tokio::net::TcpListener::bind(format!("127.0.0.1:{}", port))
-        .await
-        .map_err(|_err| Error::Error)?;
-
-    run_custom(rx, tcp_listener).await?;
-    Ok(())
-}
 
 pub async fn run_custom(
     mut stopper: tokio::sync::oneshot::Receiver<()>,
@@ -45,12 +32,12 @@ pub async fn run_custom(
         }
     });
 
+    log::info!(
+        "Server listenning on port {}...",
+        tcp_listener.local_addr().unwrap().port()
+    );
     loop {
         let players_for_client = Arc::clone(&players);
-        log::info!(
-            "Server listenning on port {}...",
-            tcp_listener.local_addr().unwrap().port()
-        );
         tokio::select! {
             _ = &mut stopper => {
                 log::info!("Received stop signal!");

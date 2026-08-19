@@ -5,7 +5,7 @@ use test_helpers::before_all;
 mod tests {
     use anyhow::bail;
     use colored::*;
-    use dronoid::{AuthenticationResponse, PlayerAction, ServerMessage};
+    use dronoid::protocol::{AuthenticationResponse, PlayerAction, ServerMessage};
     use futures::{SinkExt, StreamExt};
     use log::LevelFilter;
     use std::{net::SocketAddr, str::FromStr};
@@ -57,7 +57,7 @@ mod tests {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await?;
         let addr = listener.local_addr().unwrap();
         let hdl = tokio::spawn(async {
-            dronoid::run_custom(rx, listener).await?;
+            dronoid::run::run_custom(rx, listener).await?;
             anyhow::Ok(())
         });
         Ok((tx, hdl, addr))
