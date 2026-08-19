@@ -1,7 +1,7 @@
 use crate::Result;
-use crate::entity::drone::Drone;
-use crate::entity::program::Instruction::{ChangeDirection, Jump, Throttle};
 use crate::error::Error;
+use crate::play::drone::Drone;
+use crate::play::program::Instruction::{ChangeDirection, Jump, Throttle};
 
 pub(crate) enum Instruction {
     Jump(u16),

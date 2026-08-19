@@ -1,11 +1,9 @@
 use std::net::SocketAddr;
 
-use uuid::Uuid;
-
 use crate::protocol::{PlayerAction, ServerMessage};
 
 pub(crate) struct Player {
-    pub(crate) id: Uuid,
+    pub(crate) id: i64,
     pub(crate) sender: tokio::sync::mpsc::Sender<(bool, ServerMessage)>,
     pub(crate) receiver: tokio::sync::mpsc::Receiver<PlayerAction>,
     pub(crate) spawn_point: (f32, f32),
@@ -21,7 +19,7 @@ impl Player {
         receiver: tokio::sync::mpsc::Receiver<PlayerAction>,
     ) -> Player {
         Player {
-            id: Uuid::default(),
+            id: i64::default(),
             addr,
             sender,
             receiver,
