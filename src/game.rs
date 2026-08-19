@@ -31,7 +31,7 @@ pub(crate) async fn main_loop(players: Arc<Mutex<Vec<Player>>>) {
     let start_time = tokio::time::Instant::now();
     let mut time_mark = start_time.clone();
     let mut drones = MultiMap::<Uuid, Drone>::new();
-    let mut buildings = MultiMap::<Uuid, Box<dyn Play>>::new();
+    let mut buildings = MultiMap::<Uuid, Box<dyn Play + Send>>::new();
 
     let gravity = Vector::new(0.0, 0.0);
     let integration_parameters = IntegrationParameters::default();
@@ -88,7 +88,7 @@ pub(crate) async fn main_loop(players: Arc<Mutex<Vec<Player>>>) {
 pub(crate) async fn cycle(
     players: &mut Vec<Player>,
     drones: &mut MultiMap<Uuid, Drone>,
-    buildings: &mut MultiMap<Uuid, Box<dyn Play>>,
+    buildings: &mut MultiMap<Uuid, Box<dyn Play + Send>>,
     rigid_body_set: &mut RigidBodySet,
     collider_set: &mut ColliderSet,
     registered_players: &mut HashMap<String, RegisteredPlayer>,
