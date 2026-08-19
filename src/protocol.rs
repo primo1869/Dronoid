@@ -10,9 +10,7 @@ pub enum PlayerAction {
 pub struct AuthenticationResponse {
     pub result: bool,
     pub text: String,
-    pub pos_x: f32,
-    pub pos_y: f32,
-    pub pos_z: f32,
+    pub spawn_point: (f32, f32),
 }
 
 #[derive(Serialize, Deserialize)]

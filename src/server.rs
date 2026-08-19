@@ -2,33 +2,32 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 
 use crate::{
-    Result, game, network,
+    Result,
+    error::Error,
+    game, network,
     player::Player,
     protocol::{PlayerAction, ServerMessage},
 };
 
-const TICK_DURATION: f32 = 0.1;
+pub async fn run(port: u16) -> Result<()> {
+    let (_sd, rx) = tokio::sync::oneshot::channel::<()>();
+
+    let tcp_listener = tokio::net::TcpListener::bind(format!("127.0.0.1:{}", port))
+        .await
+        .map_err(|_err| Error::Error)?;
+
+    run_custom(rx, tcp_listener).await?;
+    Ok(())
+}
 
 pub async fn run_custom(
     mut stopper: tokio::sync::oneshot::Receiver<()>,
     tcp_listener: tokio::net::TcpListener,
 ) -> Result<()> {
     let players = Arc::new(Mutex::new(Vec::<Player>::new()));
-    let start_time = tokio::time::Instant::now();
-    let mut time_mark = start_time.clone();
-    let players_for_loop = Arc::clone(&players);
+    let players_for_game = Arc::clone(&players);
     tokio::spawn(async move {
-        log::info!("Main loop is running...");
-        loop {
-            game::cycle(players_for_loop.lock().await.as_mut()).await;
-            let late_of = (tokio::time::Instant::now() - time_mark).as_secs_f32() / TICK_DURATION;
-            if late_of > 1. {
-                log::warn!("Server is late of {} tick(s)", late_of.trunc())
-            }
-            time_mark += tokio::time::Duration::from_secs_f32(late_of.ceil());
-
-            tokio::time::sleep_until(time_mark).await;
-        }
+        game::main_loop(players_for_game).await;
     });
 
     log::info!(

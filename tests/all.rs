@@ -57,7 +57,7 @@ mod tests {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await?;
         let addr = listener.local_addr().unwrap();
         let hdl = tokio::spawn(async {
-            dronoid::run::run_custom(rx, listener).await?;
+            dronoid::server::run_custom(rx, listener).await?;
             anyhow::Ok(())
         });
         Ok((tx, hdl, addr))
@@ -167,9 +167,7 @@ mod tests {
 
         assert_eq!(true, resp.result);
         assert_eq!("Welcome", resp.text);
-        assert_eq!(0., resp.pos_x);
-        assert_eq!(0., resp.pos_y);
-        assert_eq!(0., resp.pos_z);
+        assert_eq!((0., 0.), resp.spawn_point);
 
         if tx.send(()).is_err() {
             bail!("Tests: stop send error");
@@ -187,9 +185,7 @@ mod tests {
         let (_, resp2) = authenticated_client(addr, String::from_str("Player2").unwrap()).await?;
         assert_eq!(true, resp2.result);
         assert_eq!("Welcome", resp2.text);
-        assert_eq!(0., resp2.pos_x);
-        assert_eq!(0., resp2.pos_y);
-        assert_eq!(0., resp2.pos_z);
+        assert_eq!((0., 0.), resp2.spawn_point);
 
         if tx.send(()).is_err() {
             bail!("Tests: stop send error");
@@ -207,9 +203,7 @@ mod tests {
         let (_, resp2) = authenticated_client(addr, String::from_str("Player1").unwrap()).await?;
         assert_eq!(false, resp2.result);
         assert_eq!("A player already has this name", resp2.text);
-        assert_eq!(0., resp2.pos_x);
-        assert_eq!(0., resp2.pos_y);
-        assert_eq!(0., resp2.pos_z);
+        assert_eq!((0., 0.), resp2.spawn_point);
 
         if tx.send(()).is_err() {
             bail!("Tests: stop send error");
@@ -237,9 +231,7 @@ mod tests {
             let resp = hdl.await??;
             assert_eq!(true, resp.result);
             assert_eq!("Welcome", resp.text);
-            assert_eq!(0., resp.pos_x);
-            assert_eq!(0., resp.pos_y);
-            assert_eq!(0., resp.pos_z);
+            assert_eq!((0., 0.), resp.spawn_point);
         }
 
         if tx.send(()).is_err() {

@@ -4,6 +4,15 @@ use crate::{
     error::Error,
 };
 
+pub(crate) enum Building {
+    SpawnBeacon(SpawnBeacon),
+    Factory(Factory),
+}
+
+pub(crate) trait Discover {
+    fn radius(&self) -> f32;
+}
+
 pub(crate) trait Cycle {
     fn cycle(&mut self, delta: f32);
 }
@@ -47,6 +56,14 @@ impl Program {
     }
 }
 
+pub(crate) struct SpawnBeacon;
+
+impl Discover for SpawnBeacon {
+    fn radius(&self) -> f32 {
+        25.
+    }
+}
+
 pub(crate) struct Factory {
     auto_spawn: bool,
     program: Program,
@@ -69,6 +86,12 @@ impl Cycle for Factory {
     }
 }
 
+impl Discover for Factory {
+    fn radius(&self) -> f32 {
+        50.
+    }
+}
+
 pub(crate) struct Drone {
     direction: (f32, f32),
     throttle: bool,
@@ -82,5 +105,11 @@ impl Drone {
             program_counter: 1,
             throttle: false,
         }
+    }
+}
+
+impl Discover for Drone {
+    fn radius(&self) -> f32 {
+        10.
     }
 }
