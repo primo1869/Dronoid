@@ -41,13 +41,13 @@ var default_programs = [
 func _ready() -> void:
 	minerals_variation(starting_minerals)
 	%CreateFactoryButton.text = self.CREATE_FACTORY_BUTTON_FORMAT % self.factory_cost
-	for i in 25:
-		var node_position = Vector2(randf_range(-500, 500), randf_range(-500, 500))
-		for j in range(3, 8):
-			node_position += Vector2(randf_range(-25, 25), randf_range(-25, 25))
-			var mineral_node: Node2D = self.mineral_scene.instantiate()
-			mineral_node.position = node_position
-			%Buildings.add_child(mineral_node)
+	#for i in 25:
+		#var node_position = Vector2(randf_range(-500, 500), randf_range(-500, 500))
+		#for j in range(3, 8):
+			#node_position += Vector2(randf_range(-25, 25), randf_range(-25, 25))
+			#var mineral_node: Node2D = self.mineral_scene.instantiate()
+			#mineral_node.position = node_position
+			#%Buildings.add_child(mineral_node)
 
 func network():
 	self.websocket.poll()
@@ -77,6 +77,7 @@ func network():
 						self.network_state = NetworkState.PLAYING
 						%LoginUI.hide()
 						%GameUI.show()
+						%World.show()
 					else:
 						%LoginButton.disabled = false
 						self.websocket.close()
