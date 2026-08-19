@@ -14,7 +14,7 @@ use tokio::sync::Mutex;
 use uuid::Uuid;
 
 use crate::{
-    entity::{building::Building, drone::Drone},
+    entity::{drone::Drone, play::Play},
     player::Player,
     protocol::{AuthenticationResponse, PlayerAction, ServerMessage},
     utils::is_name_valid,
@@ -31,7 +31,7 @@ pub(crate) async fn main_loop(players: Arc<Mutex<Vec<Player>>>) {
     let start_time = tokio::time::Instant::now();
     let mut time_mark = start_time.clone();
     let mut drones = MultiMap::<Uuid, Drone>::new();
-    let mut buildings = MultiMap::<Uuid, Building>::new();
+    let mut buildings = MultiMap::<Uuid, Box<dyn Play>>::new();
 
     let gravity = Vector::new(0.0, 0.0);
     let integration_parameters = IntegrationParameters::default();
@@ -88,7 +88,7 @@ pub(crate) async fn main_loop(players: Arc<Mutex<Vec<Player>>>) {
 pub(crate) async fn cycle(
     players: &mut Vec<Player>,
     drones: &mut MultiMap<Uuid, Drone>,
-    buildings: &mut MultiMap<Uuid, Building>,
+    buildings: &mut MultiMap<Uuid, Box<dyn Play>>,
     rigid_body_set: &mut RigidBodySet,
     collider_set: &mut ColliderSet,
     registered_players: &mut HashMap<String, RegisteredPlayer>,
@@ -198,21 +198,21 @@ pub(crate) async fn cycle(
 
     for (_, buildings) in &mut *buildings {
         for building in buildings {
-            match building {
-                Building::Factory(factory) => {
-                    let maybe_drones = drones.get_vec_mut(&factory.id);
-                    if maybe_drones.is_none() {
-                        continue;
-                    }
-                    let drones = maybe_drones.unwrap();
-                    for drone in &mut *drones {
-                        if drone.factory_id == factory.id {
-                            let _ = factory.program.exec(drone);
-                        }
-                    }
-                }
-                _ => {}
-            }
+            // match building {
+            //     Building::Factory(factory) => {
+            //         let maybe_drones = drones.get_vec_mut(&factory.id);
+            //         if maybe_drones.is_none() {
+            //             continue;
+            //         }
+            //         let drones = maybe_drones.unwrap();
+            //         for drone in &mut *drones {
+            //             if drone.factory_id == factory.id {
+            //                 let _ = factory.program.exec(drone);
+            //             }
+            //         }
+            //     }
+            //     _ => {}
+            // }
         }
     }
 }

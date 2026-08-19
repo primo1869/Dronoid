@@ -1,7 +1,7 @@
 use rapier2d::dynamics::{RigidBodyHandle, RigidBodySet};
 use uuid::Uuid;
 
-use crate::entity::place::Place;
+use crate::entity::play::Play;
 
 pub(crate) struct Drone {
     pub(crate) factory_id: Uuid,
@@ -23,12 +23,15 @@ impl Drone {
     }
 }
 
-impl Place for Drone {
+impl Play for Drone {
     fn discover_radius(&self) -> f32 {
         10.
     }
     fn position(&self, rigid_body_set: RigidBodySet) -> (f32, f32) {
         let position = rigid_body_set.get(self.rigid_body_hdl).unwrap().position();
         (position.translation.x, position.translation.y)
+    }
+    fn id(&self) -> Uuid {
+        Uuid::default()
     }
 }

@@ -1,7 +1,7 @@
 use rapier2d::dynamics::{RigidBodyHandle, RigidBodySet};
 use uuid::Uuid;
 
-use crate::entity::{place::Place, program::Program};
+use crate::entity::{play::Play, program::Program};
 
 // pub(crate) enum Building {
 //     SpawnBeacon(SpawnBeacon),
@@ -12,13 +12,16 @@ pub(crate) struct SpawnBeacon {
     rigid_body_hdl: RigidBodyHandle,
 }
 
-impl Place for SpawnBeacon {
+impl Play for SpawnBeacon {
     fn discover_radius(&self) -> f32 {
         25.
     }
     fn position(&self, rigid_body_set: RigidBodySet) -> (f32, f32) {
         let position = rigid_body_set.get(self.rigid_body_hdl).unwrap().position();
         (position.translation.x, position.translation.y)
+    }
+    fn id(&self) -> Uuid {
+        Uuid::default()
     }
 }
 
@@ -40,12 +43,15 @@ impl Factory {
     }
 }
 
-impl Place for Factory {
+impl Play for Factory {
     fn discover_radius(&self) -> f32 {
         50.
     }
     fn position(&self, rigid_body_set: RigidBodySet) -> (f32, f32) {
         let position = rigid_body_set.get(self.rigid_body_hdl).unwrap().position();
         (position.translation.x, position.translation.y)
+    }
+    fn id(&self) -> Uuid {
+        self.id
     }
 }
