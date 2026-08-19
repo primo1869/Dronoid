@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize)]
 pub enum PlayerAction {
     Authentication { player_name: String },
-    PlaceFactory { pos_x: f32, pos_y: f32, pos_z: f32 },
+    PlaceFactory((f32, f32)),
 }
 
 #[derive(Serialize, Deserialize)]

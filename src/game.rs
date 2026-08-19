@@ -1,5 +1,6 @@
-use std::{str::FromStr, sync::Arc};
+use std::{collections::HashMap, str::FromStr, sync::Arc};
 
+use multimap::MultiMap;
 use rapier2d::{
     dynamics::{
         CCDSolver, ImpulseJointSet, IntegrationParameters, IslandManager, MultibodyJointSet,
@@ -10,6 +11,7 @@ use rapier2d::{
     pipeline::PhysicsPipeline,
 };
 use tokio::sync::Mutex;
+use uuid::Uuid;
 
 use crate::{
     entity::{building::Building, drone::Drone},
@@ -20,11 +22,16 @@ use crate::{
 
 const TICK_DURATION: f32 = 0.1;
 
+pub(crate) struct RegisteredPlayer {
+    id: Uuid,
+    spawn_point: (f32, f32),
+}
+
 pub(crate) async fn main_loop(players: Arc<Mutex<Vec<Player>>>) {
     let start_time = tokio::time::Instant::now();
     let mut time_mark = start_time.clone();
-    let mut drones = Vec::<Drone>::new();
-    let mut buildings = Vec::<Building>::new();
+    let mut drones = MultiMap::<Uuid, Drone>::new();
+    let mut buildings = MultiMap::<Uuid, Building>::new();
 
     let gravity = Vector::new(0.0, 0.0);
     let integration_parameters = IntegrationParameters::default();
@@ -41,6 +48,8 @@ pub(crate) async fn main_loop(players: Arc<Mutex<Vec<Player>>>) {
     let mut rigid_body_set = RigidBodySet::new();
     let mut collider_set = ColliderSet::new();
 
+    let mut registered_players = HashMap::<String, RegisteredPlayer>::new();
+
     log::info!("Main loop is running...");
     loop {
         cycle(
@@ -49,6 +58,7 @@ pub(crate) async fn main_loop(players: Arc<Mutex<Vec<Player>>>) {
             &mut buildings,
             &mut rigid_body_set,
             &mut collider_set,
+            &mut registered_players,
         )
         .await;
         physics_pipeline.step(
@@ -77,10 +87,11 @@ pub(crate) async fn main_loop(players: Arc<Mutex<Vec<Player>>>) {
 
 pub(crate) async fn cycle(
     players: &mut Vec<Player>,
-    drones: &mut Vec<Drone>,
-    buildings: &mut Vec<Building>,
+    drones: &mut MultiMap<Uuid, Drone>,
+    buildings: &mut MultiMap<Uuid, Building>,
     rigid_body_set: &mut RigidBodySet,
     collider_set: &mut ColliderSet,
+    registered_players: &mut HashMap<String, RegisteredPlayer>,
 ) {
     let mut idxs_to_remove = Vec::<usize>::new();
     let mut i = 0;
@@ -136,11 +147,27 @@ pub(crate) async fn cycle(
                     } else {
                         log::trace!("{}: Authenticated: {}", player.addr, player_name);
                         player.authenticated = true;
-                        player.name = player_name;
-                        player.spawn_point = (
-                            rand::random_range(-100f32..100f32),
-                            rand::random_range(-100f32..100f32),
-                        );
+                        player.name = player_name.clone();
+                        let maybe_registered_player = registered_players.get(&player_name);
+                        if maybe_registered_player.is_some() {
+                            let registered_player = maybe_registered_player.unwrap();
+                            player.spawn_point = registered_player.spawn_point;
+                            player.id = registered_player.id;
+                        } else {
+                            player.spawn_point = (
+                                rand::random_range(-100f32..100f32),
+                                rand::random_range(-100f32..100f32),
+                            );
+                            player.id = Uuid::new_v4();
+                            registered_players.insert(
+                                player.name.clone(),
+                                RegisteredPlayer {
+                                    id: player.id,
+                                    spawn_point: player.spawn_point,
+                                },
+                            );
+                        }
+
                         (
                             true,
                             ServerMessage::AuthenticationResponse(AuthenticationResponse {
@@ -154,15 +181,11 @@ pub(crate) async fn cycle(
                         idxs_to_remove.push(i);
                     }
                 }
-                PlayerAction::PlaceFactory {
-                    #[allow(unused)]
-                    pos_x,
-                    #[allow(unused)]
-                    pos_y,
-                    #[allow(unused)]
-                    pos_z,
-                } => {
-                    continue;
+                PlayerAction::PlaceFactory((pos_x, pos_y)) => {
+                    let player_buildings = buildings.get_vec(&player.id).unwrap();
+                    for building in player_buildings {
+                        // if (pox_x - building)
+                    }
                 }
             },
         }
@@ -173,16 +196,23 @@ pub(crate) async fn cycle(
         players.remove(*idx);
     }
 
-    for building in &mut *buildings {
-        match building {
-            Building::Factory(factory) => {
-                for drone in &mut *drones {
-                    if drone.factory_id == factory.id {
-                        let _ = factory.program.exec(drone);
+    for (_, buildings) in &mut *buildings {
+        for building in buildings {
+            match building {
+                Building::Factory(factory) => {
+                    let maybe_drones = drones.get_vec_mut(&factory.id);
+                    if maybe_drones.is_none() {
+                        continue;
+                    }
+                    let drones = maybe_drones.unwrap();
+                    for drone in &mut *drones {
+                        if drone.factory_id == factory.id {
+                            let _ = factory.program.exec(drone);
+                        }
                     }
                 }
+                _ => {}
             }
-            _ => {}
         }
     }
 }
