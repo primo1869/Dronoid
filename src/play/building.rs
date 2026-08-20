@@ -5,16 +5,16 @@ use crate::{
     play::{Play, program::Program},
 };
 
-pub(crate) struct SpawnBeacon {
+pub(crate) struct Beacon {
     rigid_body_hdl: RigidBodyHandle,
 }
-impl SpawnBeacon {
+impl Beacon {
     pub(crate) fn new(rigid_body_hdl: RigidBodyHandle) -> Self {
         Self { rigid_body_hdl }
     }
 }
 
-impl Play for SpawnBeacon {
+impl Play for Beacon {
     fn discover_radius(&self) -> f32 {
         25.
     }

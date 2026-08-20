@@ -8,13 +8,13 @@ use rapier2d::{
     math::Vector,
     pipeline::PhysicsPipeline,
 };
-use std::{collections::HashMap, str::FromStr, sync::Arc};
+use std::{any::Any, collections::HashMap, str::FromStr, sync::Arc};
 use tokio::sync::Mutex;
 
 use crate::{
     play::{
         Play,
-        building::{Factory, SpawnBeacon},
+        building::{Beacon, Factory},
         drone::Drone,
     },
     player::Player,
@@ -36,8 +36,12 @@ pub(crate) struct RegisteredPlayer {
 pub(crate) async fn main_loop(players: Arc<Mutex<Vec<Player>>>) {
     let start_time = tokio::time::Instant::now();
     let mut time_mark = start_time.clone();
+
+    // let mut world = MultiMap::<i64, Box<dyn Any>>::new();
+
     let mut drones = MultiMap::<i64, Drone>::new();
-    let mut buildings = MultiMap::<i64, Box<dyn Play + Send>>::new();
+    let mut factories = MultiMap::<i64, Factory>::new();
+    let mut beacons = MultiMap::<i64, Beacon>::new();
 
     let gravity = Vector::new(0.0, 0.0);
     let integration_parameters = IntegrationParameters::default();
@@ -180,7 +184,7 @@ pub(crate) async fn cycle(
                                 rigid_body_hdl,
                                 rigid_body_set,
                             );
-                            buildings.insert(player.id, Box::new(SpawnBeacon::new(rigid_body_hdl)));
+                            buildings.insert(player.id, Box::new(Beacon::new(rigid_body_hdl)));
                             registered_players.insert(
                                 player.name.clone(),
                                 RegisteredPlayer {
