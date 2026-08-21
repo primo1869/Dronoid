@@ -1,11 +1,9 @@
-use bevy_app::{App, ScheduleRunnerPlugin, Update};
+use bevy::MinimalPlugins;
+use bevy_app::{App, PluginGroup, ScheduleRunnerPlugin, Update};
 use bevy_ecs::{
     component::Component,
-    entity::Entity,
     resource::Resource,
-    schedule::Schedule,
     system::{Commands, Query, Res, ResMut},
-    world::World,
 };
 use bevy_time::Time;
 use rapier2d::{
@@ -59,38 +57,48 @@ struct Factory {
 }
 
 #[derive(Resource, Default)]
-struct RapierBodies {
-    set: RigidBodySet,
-}
+struct RapierGravity(Vector);
 
 #[derive(Resource, Default)]
-struct RapierColliders {
-    set: ColliderSet,
-}
+struct RapierIntegrationParameters(IntegrationParameters);
 
 #[derive(Resource, Default)]
-struct RapierPipeline {
-    physics_pipeline: PhysicsPipeline,
-}
+struct RapierIslandManager(IslandManager);
+
+#[derive(Resource, Default)]
+struct RapierBroadPhase(DefaultBroadPhase);
+
+#[derive(Resource, Default)]
+struct RapierNarrowPhase(NarrowPhase);
+
+#[derive(Resource, Default)]
+struct RapierImpulseJointSet(ImpulseJointSet);
+
+#[derive(Resource, Default)]
+struct RapierMultibodyJointSet(MultibodyJointSet);
+
+#[derive(Resource, Default)]
+struct RapierCCDSolver(CCDSolver);
+
+#[derive(Resource, Default)]
+struct RapierPhysicsHook(());
+
+#[derive(Resource, Default)]
+struct RapierEventHandler(());
+
+#[derive(Resource, Default)]
+struct RapierBodies(RigidBodySet);
+
+#[derive(Resource, Default)]
+struct RapierColliders(ColliderSet);
+
+#[derive(Resource, Default)]
+struct RapierPipeline(PhysicsPipeline);
 
 #[derive(Resource, Default)]
 struct Players {
     online: Vec<Player>,
     registered: HashMap<String, RegisteredPlayer>,
-}
-
-#[derive(Resource, Default)]
-struct Rapier {
-    gravity: Vector,
-    integration_parameters: IntegrationParameters,
-    island_manager: IslandManager,
-    broad_phase: DefaultBroadPhase,
-    narrow_phase: NarrowPhase,
-    impulse_joint_set: ImpulseJointSet,
-    multibody_joint_set: MultibodyJointSet,
-    ccd_solver: CCDSolver,
-    physics_hooks: (),
-    event_handler: (),
 }
 
 fn process_factory(
@@ -104,35 +112,44 @@ fn process_factory(
             let factory_rigid_body = RigidBodyBuilder::fixed()
                 .translation(Vec2::new(0., 0.))
                 .build();
-            let hdl = rapier_bodies.set.insert(factory_rigid_body);
+            let hdl = rapier_bodies.0.insert(factory_rigid_body);
             let factory_collider = ColliderBuilder::ball(5.).build();
             rapier_colliders
-                .set
-                .insert_with_parent(factory_collider, hdl, &mut rapier_bodies.set);
+                .0
+                .insert_with_parent(factory_collider, hdl, &mut rapier_bodies.0);
             commands.spawn((ZoneExtension { radius: 25. }, RigidBody { hdl }));
         }
     }
 }
 
 fn rapier_step(
-    mut rapier: ResMut<Rapier>,
+    mut rapier_gravity: ResMut<RapierGravity>,
+    mut rapier_integration_parameters: ResMut<RapierIntegrationParameters>,
+    mut rapier_island_manager: ResMut<RapierIslandManager>,
+    mut rapier_broad_phase: ResMut<RapierBroadPhase>,
+    mut rapier_narrow_phase: ResMut<RapierNarrowPhase>,
+    mut rapier_impulse_joint_set: ResMut<RapierImpulseJointSet>,
+    mut rapier_multibody_joint_set: ResMut<RapierMultibodyJointSet>,
+    mut rapier_ccd_solver: ResMut<RapierCCDSolver>,
+    mut rapier_physics_hook: ResMut<RapierPhysicsHook>,
+    mut rapier_event_handler: ResMut<RapierEventHandler>,
     mut rapier_pipeline: ResMut<RapierPipeline>,
     mut rapier_bodies: ResMut<RapierBodies>,
     mut rapier_colliders: ResMut<RapierColliders>,
 ) {
-    rapier_pipeline.physics_pipeline.step(
-        rapier.gravity,
-        &rapier.integration_parameters,
-        &mut rapier.island_manager,
-        &mut rapier.broad_phase,
-        &mut rapier.narrow_phase,
-        &mut rapier_bodies.set,
-        &mut rapier_colliders.set,
-        &mut rapier.impulse_joint_set,
-        &mut rapier.multibody_joint_set,
-        &mut rapier.ccd_solver,
-        &rapier.physics_hooks,
-        &rapier.event_handler,
+    rapier_pipeline.0.step(
+        rapier_gravity.0,
+        &rapier_integration_parameters.0,
+        &mut rapier_island_manager.0,
+        &mut rapier_broad_phase.0,
+        &mut rapier_narrow_phase.0,
+        &mut rapier_bodies.0,
+        &mut rapier_colliders.0,
+        &mut rapier_impulse_joint_set.0,
+        &mut rapier_multibody_joint_set.0,
+        &mut rapier_ccd_solver.0,
+        &rapier_physics_hook.0,
+        &rapier_event_handler.0,
     );
 }
 
@@ -152,7 +169,16 @@ pub(crate) async fn main_loop(players: Arc<Mutex<Vec<Player>>>) {
         .add_systems(Update, process_factory)
         .add_systems(Update, rapier_step)
         .add_systems(Update, cycle)
-        .insert_resource(Rapier::default())
+        .insert_resource(RapierGravity::default())
+        .insert_resource(RapierBroadPhase::default())
+        .insert_resource(RapierCCDSolver::default())
+        .insert_resource(RapierEventHandler::default())
+        .insert_resource(RapierImpulseJointSet::default())
+        .insert_resource(RapierIntegrationParameters::default())
+        .insert_resource(RapierIslandManager::default())
+        .insert_resource(RapierMultibodyJointSet::default())
+        .insert_resource(RapierNarrowPhase::default())
+        .insert_resource(RapierPhysicsHook::default())
         .insert_resource(RapierPipeline::default())
         .insert_resource(RapierBodies::default())
         .insert_resource(RapierColliders::default())
@@ -160,22 +186,20 @@ pub(crate) async fn main_loop(players: Arc<Mutex<Vec<Player>>>) {
         .run();
 }
 
-pub(crate) async fn cycle(
+fn cycle(
     time: Res<'_, Time>,
     rigid_body_set: ResMut<'_, RapierBodies>,
     collider_set: ResMut<'_, RapierColliders>,
-    players: ResMut<'_, Players>, // delta: f32,
-                                  // players: &mut Vec<Player>,
-                                  // // drones: &mut MultiMap<i64, Drone>,
-                                  // // buildings: &mut MultiMap<i64, Box<dyn Play + Send>>,
-                                  // rigid_body_set: &mut RigidBodySet,
-                                  // collider_set: &mut ColliderSet,
-                                  // registered_players: &mut HashMap<String, RegisteredPlayer>,
+    players: ResMut<'_, Players>,
 ) {
     let mut idxs_to_remove = Vec::<usize>::new();
     let mut i = 0;
-    let player_names: Vec<String> = players.iter().map(|player| player.name.clone()).collect();
-    for player in &mut *players {
+    let player_names: Vec<String> = players
+        .online
+        .iter()
+        .map(|player| player.name.clone())
+        .collect();
+    for player in &mut *players.online {
         let maybe_player_action = player.receiver.try_recv();
         match maybe_player_action {
             Err(err) => match err {
@@ -227,7 +251,7 @@ pub(crate) async fn cycle(
                         log::trace!("{}: Authenticated: {}", player.addr, player_name);
                         player.authenticated = true;
                         player.name = player_name.clone();
-                        let maybe_registered_player = registered_players.get(&player_name);
+                        let maybe_registered_player = players.registered.get(&player_name);
                         if maybe_registered_player.is_some() {
                             let registered_player = maybe_registered_player.unwrap();
                             player.spawn_point = registered_player.spawn_point;
@@ -245,14 +269,14 @@ pub(crate) async fn cycle(
                                 ))
                                 .build();
                             let collider = ColliderBuilder::ball(1.).build();
-                            let rigid_body_hdl = rigid_body_set.insert(rigid_body);
-                            collider_set.insert_with_parent(
+                            let rigid_body_hdl = rigid_body_set.0.insert(rigid_body);
+                            collider_set.0.insert_with_parent(
                                 collider,
                                 rigid_body_hdl,
-                                rigid_body_set,
+                                &mut rigid_body_set.0,
                             );
                             // buildings.insert(player.id, Box::new(Beacon::new(rigid_body_hdl)));
-                            registered_players.insert(
+                            players.registered.insert(
                                 player.name.clone(),
                                 RegisteredPlayer {
                                     id: player.id,
@@ -270,7 +294,7 @@ pub(crate) async fn cycle(
                             }),
                         )
                     };
-                    if player.sender.send(response).await.is_err() {
+                    if player.sender.send(response).unwrap().is_err() {
                         idxs_to_remove.push(i);
                     }
                 }
@@ -315,7 +339,7 @@ pub(crate) async fn cycle(
     }
 
     for idx in idxs_to_remove.iter().rev() {
-        players.remove(*idx);
+        players.online.remove(*idx);
     }
 
     // for (_player_id, buildings) in buildings.iter_all_mut() {

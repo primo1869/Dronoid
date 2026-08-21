@@ -51,10 +51,10 @@ pub async fn run_custom(
                         return;
                     }
                     let websocket = maybe_websocket.unwrap();
-                    let (network_sender, loop_receiver) = tokio::sync::mpsc::channel::<PlayerAction>(1000);
-                    let (loop_sender, network_receiver) = tokio::sync::mpsc::channel::<(bool, ServerMessage)>(1000);
+                    let (network_sender, loop_receiver) = crossbeam_channel::unbounded::<PlayerAction>();
+                    let (loop_sender, network_receiver) = crossbeam_channel::unbounded::<(bool, ServerMessage)>();
                     players_for_client.lock().await.push(Player::new(addr, loop_sender, loop_receiver));
-                    network::process(websocket, network_sender, network_receiver).await;
+                    network::process_client(websocket, network_sender, network_receiver).await;
                 });
             }
         }

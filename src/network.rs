@@ -1,13 +1,14 @@
+use crossbeam_channel::{Receiver, Sender};
 use futures::{SinkExt, StreamExt};
 use tokio::net::TcpStream;
 use tokio_tungstenite::{WebSocketStream, tungstenite::Message};
 
 use crate::protocol::{PlayerAction, ServerMessage};
 
-pub(crate) async fn process(
+pub(crate) async fn process_client(
     mut websocket: WebSocketStream<TcpStream>,
-    sender: tokio::sync::mpsc::Sender<PlayerAction>,
-    mut receiver: tokio::sync::mpsc::Receiver<(bool, ServerMessage)>,
+    sender: Sender<PlayerAction>,
+    mut receiver: Receiver<(bool, ServerMessage)>,
 ) {
     loop {
         tokio::select! {
@@ -28,7 +29,7 @@ pub(crate) async fn process(
                     if maybe_client_message.is_err() {
                         return;
                     }
-                    if sender.send(maybe_client_message.unwrap()).await.is_err() {
+                    if sender.send(maybe_client_message.unwrap()).unwrap().is_err() {
                         return;
                     }
                 } else {

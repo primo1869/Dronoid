@@ -1,11 +1,13 @@
 use std::net::SocketAddr;
 
+use crossbeam_channel::{Receiver, Sender};
+
 use crate::protocol::{PlayerAction, ServerMessage};
 
 pub(crate) struct Player {
     pub(crate) id: i64,
-    pub(crate) sender: tokio::sync::mpsc::Sender<(bool, ServerMessage)>,
-    pub(crate) receiver: tokio::sync::mpsc::Receiver<PlayerAction>,
+    pub(crate) sender: Sender<(bool, ServerMessage)>,
+    pub(crate) receiver: Receiver<PlayerAction>,
     pub(crate) spawn_point: (f32, f32),
     pub(crate) authenticated: bool,
     pub(crate) name: String,
@@ -15,8 +17,8 @@ pub(crate) struct Player {
 impl Player {
     pub(crate) fn new(
         addr: SocketAddr,
-        sender: tokio::sync::mpsc::Sender<(bool, ServerMessage)>,
-        receiver: tokio::sync::mpsc::Receiver<PlayerAction>,
+        sender: Sender<(bool, ServerMessage)>,
+        receiver: Receiver<PlayerAction>,
     ) -> Player {
         Player {
             id: i64::default(),
