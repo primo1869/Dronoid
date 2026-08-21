@@ -1,24 +1,27 @@
-use multimap::MultiMap;
+use bevy_app::{App, Update};
+use bevy_ecs::{
+    component::Component,
+    entity::Entity,
+    resource::Resource,
+    schedule::Schedule,
+    system::{Commands, Query, ResMut},
+    world::World,
+};
 use rapier2d::{
     dynamics::{
         CCDSolver, ImpulseJointSet, IntegrationParameters, IslandManager, MultibodyJointSet,
-        RigidBodyBuilder, RigidBodySet,
+        RigidBodyBuilder, RigidBodyHandle, RigidBodySet,
     },
     geometry::{ColliderBuilder, ColliderSet, DefaultBroadPhase, NarrowPhase},
-    math::Vector,
+    math::{Vec2, Vector},
     pipeline::PhysicsPipeline,
 };
-use std::{any::Any, collections::HashMap, str::FromStr, sync::Arc};
+use std::{collections::HashMap, str::FromStr, sync::Arc};
 use tokio::sync::Mutex;
 
 use crate::{
-    play::{
-        Play,
-        building::{Beacon, Factory},
-        drone::Drone,
-    },
     player::Player,
-    protocol::{AuthenticationResponse, FactoryControl, PlayerAction, ServerMessage},
+    protocol::{AuthenticationResponse, PlayerAction, ServerMessage},
     utils::is_name_valid,
 };
 
@@ -33,59 +36,130 @@ pub(crate) struct RegisteredPlayer {
     spawn_point: (f32, f32),
 }
 
+#[derive(Component)]
+struct ZoneExtension {
+    radius: f32,
+}
+
+#[derive(Component)]
+struct RigidBody {
+    hdl: RigidBodyHandle,
+}
+
+#[derive(Component)]
+struct ProgramCounter {
+    idx: u16,
+}
+
+#[derive(Component)]
+struct Factory {
+    auto_spawn: bool,
+    cooldown: f32,
+}
+
+#[derive(Resource, Default)]
+struct RapierBodies {
+    set: RigidBodySet,
+}
+
+#[derive(Resource, Default)]
+struct RapierColliders {
+    set: ColliderSet,
+}
+
+#[derive(Resource, Default)]
+struct RapierPipeline {
+    physics_pipeline: PhysicsPipeline,
+}
+
+#[derive(Resource, Default)]
+struct Rapier {
+    gravity: Vector,
+    integration_parameters: IntegrationParameters,
+    island_manager: IslandManager,
+    broad_phase: DefaultBroadPhase,
+    narrow_phase: NarrowPhase,
+    impulse_joint_set: ImpulseJointSet,
+    multibody_joint_set: MultibodyJointSet,
+    ccd_solver: CCDSolver,
+    physics_hooks: (),
+    event_handler: (),
+}
+
+fn process_factory(
+    query: Query<&mut Factory>,
+    mut rapier_bodies: ResMut<RapierBodies>,
+    mut rapier_colliders: ResMut<RapierColliders>,
+    mut commands: Commands,
+) {
+    for factory in query {
+        if factory.cooldown < 0. && factory.cooldown - TICK_DURATION <= 0. {
+            let factory_rigid_body = RigidBodyBuilder::fixed()
+                .translation(Vec2::new(0., 0.))
+                .build();
+            let hdl = rapier_bodies.set.insert(factory_rigid_body);
+            let factory_collider = ColliderBuilder::ball(5.).build();
+            rapier_colliders
+                .set
+                .insert_with_parent(factory_collider, hdl, &mut rapier_bodies.set);
+            commands.spawn((ZoneExtension { radius: 25. }, RigidBody { hdl }));
+        }
+    }
+}
+
+fn rapier_step(
+    mut rapier: ResMut<Rapier>,
+    mut rapier_pipeline: ResMut<RapierPipeline>,
+    mut rapier_bodies: ResMut<RapierBodies>,
+    mut rapier_colliders: ResMut<RapierColliders>,
+) {
+    rapier_pipeline.physics_pipeline.step(
+        rapier.gravity,
+        &rapier.integration_parameters,
+        &mut rapier.island_manager,
+        &mut rapier.broad_phase,
+        &mut rapier.narrow_phase,
+        &mut rapier_bodies.set,
+        &mut rapier_colliders.set,
+        &mut rapier.impulse_joint_set,
+        &mut rapier.multibody_joint_set,
+        &mut rapier.ccd_solver,
+        &rapier.physics_hooks,
+        &rapier.event_handler,
+    );
+}
+
 pub(crate) async fn main_loop(players: Arc<Mutex<Vec<Player>>>) {
     let start_time = tokio::time::Instant::now();
     let mut time_mark = start_time.clone();
 
-    // let mut world = MultiMap::<i64, Box<dyn Any>>::new();
-
-    let mut drones = MultiMap::<i64, Drone>::new();
-    let mut factories = MultiMap::<i64, Factory>::new();
-    let mut beacons = MultiMap::<i64, Beacon>::new();
-
-    let gravity = Vector::new(0.0, 0.0);
-    let integration_parameters = IntegrationParameters::default();
-    let mut physics_pipeline = PhysicsPipeline::new();
-    let mut island_manager = IslandManager::new();
-    let mut broad_phase = DefaultBroadPhase::new();
-    let mut narrow_phase = NarrowPhase::new();
-    let mut impulse_joint_set = ImpulseJointSet::new();
-    let mut multibody_joint_set = MultibodyJointSet::new();
-    let mut ccd_solver = CCDSolver::new();
-    let physics_hooks = ();
-    let event_handler = ();
-
-    let mut rigid_body_set = RigidBodySet::new();
-    let mut collider_set = ColliderSet::new();
-
     let mut registered_players = HashMap::<String, RegisteredPlayer>::new();
+
+    let mut world = World::default();
+
+    App::new()
+        .add_systems(Update, process_factory)
+        .add_systems(Update, rapier_step)
+        .insert_resource(Rapier::default())
+        .insert_resource(RapierPipeline::default())
+        .insert_resource(RapierBodies::default())
+        .insert_resource(RapierColliders::default())
+        .run();
 
     log::info!("Main loop is running...");
     loop {
         cycle(
             TICK_DURATION,
             players.lock().await.as_mut(),
-            &mut drones,
-            &mut buildings,
+            // &mut drones,
+            // &mut buildings,
             &mut rigid_body_set,
             &mut collider_set,
             &mut registered_players,
         )
         .await;
-        physics_pipeline.step(
-            gravity,
-            &integration_parameters,
-            &mut island_manager,
-            &mut broad_phase,
-            &mut narrow_phase,
-            &mut rigid_body_set,
-            &mut collider_set,
-            &mut impulse_joint_set,
-            &mut multibody_joint_set,
-            &mut ccd_solver,
-            &physics_hooks,
-            &event_handler,
-        );
+
+        // schedule.run(&mut world);
         let late_of = (tokio::time::Instant::now() - time_mark).as_secs_f32() / TICK_DURATION;
         if late_of > 1. {
             log::warn!("Server is late of {} tick(s)", late_of.trunc())
@@ -99,8 +173,8 @@ pub(crate) async fn main_loop(players: Arc<Mutex<Vec<Player>>>) {
 pub(crate) async fn cycle(
     delta: f32,
     players: &mut Vec<Player>,
-    drones: &mut MultiMap<i64, Drone>,
-    buildings: &mut MultiMap<i64, Box<dyn Play + Send>>,
+    // drones: &mut MultiMap<i64, Drone>,
+    // buildings: &mut MultiMap<i64, Box<dyn Play + Send>>,
     rigid_body_set: &mut RigidBodySet,
     collider_set: &mut ColliderSet,
     registered_players: &mut HashMap<String, RegisteredPlayer>,
@@ -184,7 +258,7 @@ pub(crate) async fn cycle(
                                 rigid_body_hdl,
                                 rigid_body_set,
                             );
-                            buildings.insert(player.id, Box::new(Beacon::new(rigid_body_hdl)));
+                            // buildings.insert(player.id, Box::new(Beacon::new(rigid_body_hdl)));
                             registered_players.insert(
                                 player.name.clone(),
                                 RegisteredPlayer {
@@ -208,38 +282,38 @@ pub(crate) async fn cycle(
                     }
                 }
                 PlayerAction::PlaceFactory((pos_x, pos_y)) => {
-                    let player_buildings = buildings.get_vec(&player.id).unwrap();
-                    for building in player_buildings {
-                        let building_pos = building.position(rigid_body_set);
-                        if (pos_x - building_pos.0).powf(2.) + (pos_y - building_pos.1).powf(2.)
-                            < building.discover_radius().powf(2.)
-                        {
-                            let rigid_body = RigidBodyBuilder::fixed()
-                                .translation(Vector::new(pos_x, pos_y))
-                                .build();
-                            let collider = ColliderBuilder::ball(1.).build();
-                            let rigid_body_hdl = rigid_body_set.insert(rigid_body);
-                            collider_set.insert_with_parent(
-                                collider,
-                                rigid_body_hdl,
-                                rigid_body_set,
-                            );
-                            buildings.insert(player.id, Box::new(Factory::new(rigid_body_hdl)));
-                            break;
-                        }
-                    }
+                    // let player_buildings = buildings.get_vec(&player.id).unwrap();
+                    // for building in player_buildings {
+                    //     let building_pos = building.position(rigid_body_set);
+                    //     if (pos_x - building_pos.0).powf(2.) + (pos_y - building_pos.1).powf(2.)
+                    //         < building.discover_radius().powf(2.)
+                    //     {
+                    //         let rigid_body = RigidBodyBuilder::fixed()
+                    //             .translation(Vector::new(pos_x, pos_y))
+                    //             .build();
+                    //         let collider = ColliderBuilder::ball(1.).build();
+                    //         let rigid_body_hdl = rigid_body_set.insert(rigid_body);
+                    //         collider_set.insert_with_parent(
+                    //             collider,
+                    //             rigid_body_hdl,
+                    //             rigid_body_set,
+                    //         );
+                    //         buildings.insert(player.id, Box::new(Factory::new(rigid_body_hdl)));
+                    //         break;
+                    //     }
+                    // }
                 }
                 PlayerAction::ControlFactory { id, control } => {
-                    let player_buildings = buildings.get_vec_mut(&player.id).unwrap();
-                    for building in player_buildings {
-                        if building.id() == id {
-                            match control {
-                                FactoryControl::ManualSpawn => {}
-                                FactoryControl::SetAutoSpawn(value) => {}
-                            }
-                            continue;
-                        }
-                    }
+                    // let player_buildings = buildings.get_vec_mut(&player.id).unwrap();
+                    // for building in player_buildings {
+                    //     if building.id() == id {
+                    //         match control {
+                    //             FactoryControl::ManualSpawn => {}
+                    //             FactoryControl::SetAutoSpawn(value) => {}
+                    //         }
+                    //         continue;
+                    //     }
+                    // }
                     // error
                 }
             },
@@ -251,28 +325,28 @@ pub(crate) async fn cycle(
         players.remove(*idx);
     }
 
-    for (_player_id, buildings) in buildings.iter_all_mut() {
-        for building in buildings {
-            if let Some(orders) = building.cycle(delta) {
-                for order in orders {
-                    match order {
-                        Order::AddDrone => {
-                            let building_pos = building.position(rigid_body_set);
-                            let rigid_body = RigidBodyBuilder::fixed()
-                                .translation(Vector::new(building_pos.0, building_pos.1))
-                                .build();
-                            let collider = ColliderBuilder::ball(1.).build();
-                            let rigid_body_hdl = rigid_body_set.insert(rigid_body);
-                            collider_set.insert_with_parent(
-                                collider,
-                                rigid_body_hdl,
-                                rigid_body_set,
-                            );
-                            drones.insert(building.id(), Drone::new(building.id(), rigid_body_hdl));
-                        }
-                    }
-                }
-            }
-        }
-    }
+    // for (_player_id, buildings) in buildings.iter_all_mut() {
+    //     for building in buildings {
+    //         if let Some(orders) = building.cycle(delta) {
+    //             for order in orders {
+    //                 match order {
+    //                     Order::AddDrone => {
+    //                         let building_pos = building.position(rigid_body_set);
+    //                         let rigid_body = RigidBodyBuilder::fixed()
+    //                             .translation(Vector::new(building_pos.0, building_pos.1))
+    //                             .build();
+    //                         let collider = ColliderBuilder::ball(1.).build();
+    //                         let rigid_body_hdl = rigid_body_set.insert(rigid_body);
+    //                         collider_set.insert_with_parent(
+    //                             collider,
+    //                             rigid_body_hdl,
+    //                             rigid_body_set,
+    //                         );
+    //                         drones.insert(building.id(), Drone::new(building.id(), rigid_body_hdl));
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
 }
