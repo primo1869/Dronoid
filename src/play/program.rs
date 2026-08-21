@@ -32,10 +32,7 @@ impl Program {
         Self {
             instructions: vec![
                 Throttle(true),
-                ChangeDirection(
-                    rand::random_range(-1f32..1f32),
-                    rand::random_range(-1f32..1f32),
-                ),
+                ChangeDirection(rand::random_range(-1f32..1f32), rand::random_range(-1f32..1f32)),
                 Jump(2),
             ],
         }

@@ -1,16 +1,13 @@
 use bevy::MinimalPlugins;
-use bevy_app::{App, PluginGroup, ScheduleRunnerPlugin, Update};
+use bevy_app::{App, PluginGroup, ScheduleRunnerPlugin, Startup, Update};
 use bevy_ecs::{
     component::Component,
     resource::Resource,
-    system::{Commands, Query, Res, ResMut},
+    system::{Commands, Query, ResMut},
 };
-use bevy_time::Time;
+use crossbeam_channel::TryRecvError;
 use rapier2d::{
-    dynamics::{
-        CCDSolver, ImpulseJointSet, IntegrationParameters, IslandManager, MultibodyJointSet,
-        RigidBodyBuilder, RigidBodyHandle, RigidBodySet,
-    },
+    dynamics::{CCDSolver, ImpulseJointSet, IntegrationParameters, IslandManager, MultibodyJointSet, RigidBodyBuilder, RigidBodyHandle, RigidBodySet},
     geometry::{ColliderBuilder, ColliderSet, DefaultBroadPhase, NarrowPhase},
     math::{Vec2, Vector},
     pipeline::PhysicsPipeline,
@@ -19,12 +16,12 @@ use std::{collections::HashMap, str::FromStr, sync::Arc, time::Duration};
 use tokio::sync::Mutex;
 
 use crate::{
+    Result, TICK_DURATION,
+    error::Error,
     player::Player,
     protocol::{AuthenticationResponse, PlayerAction, ServerMessage},
     utils::is_name_valid,
 };
-
-const TICK_DURATION: f32 = 0.1;
 
 pub(crate) enum Order {
     AddDrone,
@@ -53,7 +50,7 @@ struct ProgramCounter {
 #[derive(Component)]
 struct Factory {
     auto_spawn: bool,
-    cooldown: f32,
+    cooldown: f64,
 }
 
 #[derive(Resource, Default)]
@@ -96,27 +93,18 @@ struct RapierColliders(ColliderSet);
 struct RapierPipeline(PhysicsPipeline);
 
 #[derive(Resource, Default)]
-struct Players {
-    online: Vec<Player>,
-    registered: HashMap<String, RegisteredPlayer>,
-}
+struct OnlinePlayers(Vec<Player>);
 
-fn process_factory(
-    query: Query<&mut Factory>,
-    mut rapier_bodies: ResMut<RapierBodies>,
-    mut rapier_colliders: ResMut<RapierColliders>,
-    mut commands: Commands,
-) {
+#[derive(Resource, Default)]
+struct RegisteredPlayers(HashMap<String, RegisteredPlayer>);
+
+fn process_factory(query: Query<&mut Factory>, mut rapier_bodies: ResMut<RapierBodies>, mut rapier_colliders: ResMut<RapierColliders>, mut commands: Commands) {
     for factory in query {
         if factory.cooldown < 0. && factory.cooldown - TICK_DURATION <= 0. {
-            let factory_rigid_body = RigidBodyBuilder::fixed()
-                .translation(Vec2::new(0., 0.))
-                .build();
+            let factory_rigid_body = RigidBodyBuilder::fixed().translation(Vec2::new(0., 0.)).build();
             let hdl = rapier_bodies.0.insert(factory_rigid_body);
             let factory_collider = ColliderBuilder::ball(5.).build();
-            rapier_colliders
-                .0
-                .insert_with_parent(factory_collider, hdl, &mut rapier_bodies.0);
+            rapier_colliders.0.insert_with_parent(factory_collider, hdl, &mut rapier_bodies.0);
             commands.spawn((ZoneExtension { radius: 25. }, RigidBody { hdl }));
         }
     }
@@ -153,19 +141,14 @@ fn rapier_step(
     );
 }
 
-pub(crate) async fn main_loop(players: Arc<Mutex<Vec<Player>>>) {
-    let start_time = tokio::time::Instant::now();
-    let mut time_mark = start_time.clone();
+fn startup() {
+    log::info!("Game loop is running !");
+}
 
-    let mut registered_players = HashMap::<String, RegisteredPlayer>::new();
-
-    log::info!("Main loop is running...");
-    App::new()
-        .add_plugins(
-            MinimalPlugins.set(ScheduleRunnerPlugin::run_loop(Duration::from_secs_f64(
-                1.0 / 60.0,
-            ))),
-        )
+pub(crate) async fn process(players: Arc<Mutex<Vec<Player>>>) -> Result<()> {
+    let exit = App::new()
+        .add_plugins(MinimalPlugins.set(ScheduleRunnerPlugin::run_loop(Duration::from_secs_f64(TICK_DURATION))))
+        .add_systems(Startup, startup)
         .add_systems(Update, process_factory)
         .add_systems(Update, rapier_step)
         .add_systems(Update, cycle)
@@ -182,31 +165,30 @@ pub(crate) async fn main_loop(players: Arc<Mutex<Vec<Player>>>) {
         .insert_resource(RapierPipeline::default())
         .insert_resource(RapierBodies::default())
         .insert_resource(RapierColliders::default())
-        // .insert_resource(FixedTime::new_from_secs(FIXED_TIMESTEP))
         .run();
+    if exit.is_error() {
+        return Err(Error::Error);
+    }
+    Ok(())
 }
 
 fn cycle(
-    time: Res<'_, Time>,
-    rigid_body_set: ResMut<'_, RapierBodies>,
-    collider_set: ResMut<'_, RapierColliders>,
-    players: ResMut<'_, Players>,
+    mut rigid_body_set: ResMut<'_, RapierBodies>,
+    mut collider_set: ResMut<'_, RapierColliders>,
+    mut online_players: ResMut<'_, OnlinePlayers>,
+    mut registered_players: ResMut<'_, RegisteredPlayers>,
 ) {
     let mut idxs_to_remove = Vec::<usize>::new();
     let mut i = 0;
-    let player_names: Vec<String> = players
-        .online
-        .iter()
-        .map(|player| player.name.clone())
-        .collect();
-    for player in &mut *players.online {
+    let player_names: Vec<String> = online_players.0.iter().map(|player| player.name.clone()).collect();
+    for player in &mut *online_players.0 {
         let maybe_player_action = player.receiver.try_recv();
         match maybe_player_action {
             Err(err) => match err {
-                tokio::sync::mpsc::error::TryRecvError::Disconnected => {
+                TryRecvError::Disconnected => {
                     idxs_to_remove.push(i);
                 }
-                tokio::sync::mpsc::error::TryRecvError::Empty => continue,
+                TryRecvError::Empty => continue,
             },
             Ok(player_action) => match player_action {
                 PlayerAction::Authentication { player_name } => {
@@ -232,11 +214,7 @@ fn cycle(
                                 spawn_point: (0., 0.),
                             }),
                         )
-                    } else if player_names
-                        .iter()
-                        .find(|&other_name| other_name == &player_name)
-                        .is_some()
-                    {
+                    } else if player_names.iter().find(|&other_name| other_name == &player_name).is_some() {
                         log::trace!("{}: Name already taken: {}", player.addr, player_name);
                         idxs_to_remove.push(i);
                         (
@@ -251,32 +229,22 @@ fn cycle(
                         log::trace!("{}: Authenticated: {}", player.addr, player_name);
                         player.authenticated = true;
                         player.name = player_name.clone();
-                        let maybe_registered_player = players.registered.get(&player_name);
+                        let maybe_registered_player = registered_players.0.get(&player_name);
                         if maybe_registered_player.is_some() {
                             let registered_player = maybe_registered_player.unwrap();
                             player.spawn_point = registered_player.spawn_point;
                             player.id = registered_player.id;
                         } else {
-                            player.spawn_point = (
-                                rand::random_range(-100f32..100f32),
-                                rand::random_range(-100f32..100f32),
-                            );
+                            player.spawn_point = (rand::random_range(-100f32..100f32), rand::random_range(-100f32..100f32));
                             player.id = rand::random_range(i64::MIN..i64::MAX);
                             let rigid_body = RigidBodyBuilder::fixed()
-                                .translation(Vector::new(
-                                    player.spawn_point.0,
-                                    player.spawn_point.1,
-                                ))
+                                .translation(Vector::new(player.spawn_point.0, player.spawn_point.1))
                                 .build();
                             let collider = ColliderBuilder::ball(1.).build();
                             let rigid_body_hdl = rigid_body_set.0.insert(rigid_body);
-                            collider_set.0.insert_with_parent(
-                                collider,
-                                rigid_body_hdl,
-                                &mut rigid_body_set.0,
-                            );
+                            collider_set.0.insert_with_parent(collider, rigid_body_hdl, &mut rigid_body_set.0);
                             // buildings.insert(player.id, Box::new(Beacon::new(rigid_body_hdl)));
-                            players.registered.insert(
+                            registered_players.0.insert(
                                 player.name.clone(),
                                 RegisteredPlayer {
                                     id: player.id,
@@ -294,7 +262,7 @@ fn cycle(
                             }),
                         )
                     };
-                    if player.sender.send(response).unwrap().is_err() {
+                    if player.sender.send(response).is_err() {
                         idxs_to_remove.push(i);
                     }
                 }
@@ -339,7 +307,7 @@ fn cycle(
     }
 
     for idx in idxs_to_remove.iter().rev() {
-        players.online.remove(*idx);
+        online_players.0.remove(*idx);
     }
 
     // for (_player_id, buildings) in buildings.iter_all_mut() {

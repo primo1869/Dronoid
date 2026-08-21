@@ -1,10 +1,8 @@
 #[cfg(test)]
 mod tests {
     use anyhow::bail;
-    use colored::*;
     use dronoid::protocol::{AuthenticationResponse, PlayerAction, ServerMessage};
     use futures::{SinkExt, StreamExt};
-    use log::LevelFilter;
     use std::{net::SocketAddr, str::FromStr};
     use tokio::{
         io::AsyncWriteExt,
@@ -15,46 +13,12 @@ mod tests {
         tungstenite::{self},
     };
 
-    fn setup_logger() {
-        let start_time = tokio::time::Instant::now();
-
-        let log_level_str = std::env::var("RUST_LOG").unwrap_or_else(|_| "ERROR".to_string());
-        let log_level = LevelFilter::from_str(&log_level_str).unwrap_or(LevelFilter::Error);
-
-        let _ = fern::Dispatch::new()
-            .level(log_level)
-            .format(move |out, message, record| {
-                let level_color = match record.level() {
-                    log::Level::Error => colored::Color::Red,
-                    log::Level::Warn => colored::Color::Yellow,
-                    log::Level::Info => colored::Color::White,
-                    log::Level::Debug => colored::Color::Green,
-                    log::Level::Trace => colored::Color::BrightBlack,
-                };
-
-                let formatted = format!(
-                    "[{:.3}] {}",
-                    (tokio::time::Instant::now() - start_time).as_secs_f32(),
-                    message
-                );
-
-                out.finish(format_args!("{}", formatted.color(level_color)));
-            })
-            .filter(|metadata| metadata.target().contains("dronoid"))
-            .chain(std::io::stdout())
-            .apply();
-    }
-
-    async fn bootstrap() -> anyhow::Result<(
-        tokio::sync::oneshot::Sender<()>,
-        tokio::task::JoinHandle<Result<(), anyhow::Error>>,
-        SocketAddr,
-    )> {
+    async fn bootstrap() -> anyhow::Result<(tokio::sync::oneshot::Sender<()>, tokio::task::JoinHandle<Result<(), anyhow::Error>>, SocketAddr)> {
         let (tx, rx) = tokio::sync::oneshot::channel::<()>();
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await?;
         let addr = listener.local_addr().unwrap();
         let hdl = tokio::spawn(async {
-            dronoid::server::run_custom(rx, listener).await?;
+            dronoid::run_custom(rx, listener).await?;
             anyhow::Ok(())
         });
         Ok((tx, hdl, addr))
@@ -63,32 +27,20 @@ mod tests {
     async fn authenticated_client(
         addr: SocketAddr,
         player_name: String,
-    ) -> anyhow::Result<(
-        WebSocketStream<MaybeTlsStream<TcpStream>>,
-        AuthenticationResponse,
-    )> {
-        let websocket_request = tungstenite::ClientRequestBuilder::new(
-            tungstenite::http::Uri::from_str(
-                format!("ws://{}:{}", addr.ip(), addr.port()).as_str(),
-            )
-            .unwrap(),
-        );
+    ) -> anyhow::Result<(WebSocketStream<MaybeTlsStream<TcpStream>>, AuthenticationResponse)> {
+        let websocket_request =
+            tungstenite::ClientRequestBuilder::new(tungstenite::http::Uri::from_str(format!("ws://{}:{}", addr.ip(), addr.port()).as_str()).unwrap());
 
-        let (mut websocket, _response) =
-            tokio_tungstenite::connect_async(websocket_request).await?;
+        let (mut websocket, _response) = tokio_tungstenite::connect_async(websocket_request).await?;
 
         let auth_message = PlayerAction::Authentication { player_name };
 
         let message_str = serde_json::to_string(&auth_message).unwrap();
 
-        websocket
-            .send(tungstenite::Message::Text(message_str.into()))
-            .await?;
+        websocket.send(tungstenite::Message::Text(message_str.into())).await?;
 
         if let Some(Ok(tungstenite::Message::Text(auth_resp_text))) = websocket.next().await {
-            if let Ok(ServerMessage::AuthenticationResponse(resp)) =
-                serde_json::from_str(&auth_resp_text)
-            {
+            if let Ok(ServerMessage::AuthenticationResponse(resp)) = serde_json::from_str(&auth_resp_text) {
                 Ok((websocket, resp))
             } else {
                 bail!("error")
@@ -97,10 +49,6 @@ mod tests {
             bail!("error")
         }
     }
-
-    // fn before_all() {
-    //     setup_logger();
-    // }
 
     #[tokio::test]
     async fn test_01_run() -> anyhow::Result<()> {
@@ -139,12 +87,8 @@ mod tests {
     async fn test_03_websocket_upgrade() -> anyhow::Result<()> {
         let (tx, hdl, addr) = bootstrap().await?;
 
-        let websocket_request = tungstenite::ClientRequestBuilder::new(
-            tungstenite::http::Uri::from_str(
-                format!("ws://{}:{}", addr.ip(), addr.port()).as_str(),
-            )
-            .unwrap(),
-        );
+        let websocket_request =
+            tungstenite::ClientRequestBuilder::new(tungstenite::http::Uri::from_str(format!("ws://{}:{}", addr.ip(), addr.port()).as_str()).unwrap());
 
         tokio_tungstenite::connect_async(websocket_request).await?;
 

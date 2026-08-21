@@ -19,11 +19,7 @@ fn setup_logger() {
                 log::Level::Trace => colored::Color::BrightBlack,
             };
 
-            let formatted = format!(
-                "[{:.3}] {}",
-                (tokio::time::Instant::now() - start_time).as_secs_f32(),
-                message
-            );
+            let formatted = format!("[{:.3}] {}", (tokio::time::Instant::now() - start_time).as_secs_f32(), message);
 
             out.finish(format_args!("{}", formatted.color(level_color)));
         })
@@ -35,6 +31,6 @@ fn setup_logger() {
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> anyhow::Result<()> {
     setup_logger();
-    let _ = dronoid::server::run(8080).await?;
+    let _ = dronoid::run(8080).await?;
     Ok(())
 }

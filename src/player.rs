@@ -15,11 +15,7 @@ pub(crate) struct Player {
 }
 
 impl Player {
-    pub(crate) fn new(
-        addr: SocketAddr,
-        sender: Sender<(bool, ServerMessage)>,
-        receiver: Receiver<PlayerAction>,
-    ) -> Player {
+    pub(crate) fn new(addr: SocketAddr, sender: Sender<(bool, ServerMessage)>, receiver: Receiver<PlayerAction>) -> Player {
         Player {
             id: i64::default(),
             addr,
