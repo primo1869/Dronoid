@@ -135,7 +135,7 @@ pub(crate) async fn main_loop(players: Arc<Mutex<Vec<Player>>>) {
 
     let mut registered_players = HashMap::<String, RegisteredPlayer>::new();
 
-    let mut world = World::default();
+    log::info!("Main loop is running...");
 
     App::new()
         .add_systems(Update, process_factory)
@@ -146,7 +146,6 @@ pub(crate) async fn main_loop(players: Arc<Mutex<Vec<Player>>>) {
         .insert_resource(RapierColliders::default())
         .run();
 
-    log::info!("Main loop is running...");
     loop {
         cycle(
             TICK_DURATION,
