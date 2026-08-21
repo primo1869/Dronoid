@@ -1,5 +1,6 @@
 use bevy::MinimalPlugins;
-use bevy_app::{App, PluginGroup, ScheduleRunnerPlugin, Startup, Update};
+use bevy::prelude::*;
+use bevy_app::{App, AppExit, PluginGroup, ScheduleRunnerPlugin, Startup, Update};
 use bevy_ecs::{
     component::Component,
     resource::Resource,
@@ -179,7 +180,10 @@ fn cycle(
     mut collider_set: ResMut<'_, RapierColliders>,
     mut online_players: ResMut<'_, OnlinePlayers>,
     mut registered_players: ResMut<'_, RegisteredPlayers>,
+    mut exit: MessageWriter<AppExit>,
 ) {
+    log::info!("cycle");
+    exit.write_default();
     let mut idxs_to_remove = Vec::<usize>::new();
     let mut i = 0;
     let player_names: Vec<String> = online_players.0.iter().map(|player| player.name.clone()).collect();
