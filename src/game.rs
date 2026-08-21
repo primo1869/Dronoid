@@ -165,6 +165,8 @@ pub(crate) async fn process(players: Arc<Mutex<Vec<Player>>>) -> Result<()> {
         .insert_resource(RapierPipeline::default())
         .insert_resource(RapierBodies::default())
         .insert_resource(RapierColliders::default())
+        .insert_resource(OnlinePlayers::default())
+        .insert_resource(RegisteredPlayers::default())
         .run();
     if exit.is_error() {
         return Err(Error::Error);

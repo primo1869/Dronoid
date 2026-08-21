@@ -1,6 +1,6 @@
 use rapier2d::dynamics::{RigidBodyHandle, RigidBodySet};
 
-use crate::{game::Order, play::Play};
+use crate::game::Order;
 
 pub(crate) struct Drone {
     pub(crate) factory_id: i64,
@@ -22,18 +22,18 @@ impl Drone {
     }
 }
 
-impl Play for Drone {
-    fn discover_radius(&self) -> f32 {
-        10.
-    }
-    fn position(&self, rigid_body_set: &RigidBodySet) -> (f32, f32) {
-        let position = rigid_body_set.get(self.rigid_body_hdl).unwrap().position();
-        (position.translation.x, position.translation.y)
-    }
-    fn id(&self) -> i64 {
-        i64::default()
-    }
-    fn cycle(&mut self, _delta: f32) -> Option<Vec<Order>> {
-        None
-    }
-}
+// impl Play for Drone {
+//     fn discover_radius(&self) -> f32 {
+//         10.
+//     }
+//     fn position(&self, rigid_body_set: &RigidBodySet) -> (f32, f32) {
+//         let position = rigid_body_set.get(self.rigid_body_hdl).unwrap().position();
+//         (position.translation.x, position.translation.y)
+//     }
+//     fn id(&self) -> i64 {
+//         i64::default()
+//     }
+//     fn cycle(&mut self, _delta: f32) -> Option<Vec<Order>> {
+//         None
+//     }
+// }

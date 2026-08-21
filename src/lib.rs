@@ -1,16 +1,17 @@
 #![forbid(unsafe_code)]
 
+pub(crate) mod building;
+pub(crate) mod drone;
 pub(crate) mod error;
 pub(crate) mod game;
 pub(crate) mod network;
-pub(crate) mod play;
 pub(crate) mod player;
+pub(crate) mod program;
 pub(crate) mod utils;
 
 pub mod protocol;
 
 use std::sync::Arc;
-
 use tokio::sync::Mutex;
 
 use crate::{error::Error, player::Player};
@@ -30,7 +31,7 @@ pub async fn run(port: u16) -> Result<()> {
     Ok(())
 }
 
-pub async fn run_custom(mut stopper: tokio::sync::oneshot::Receiver<()>, tcp_listener: tokio::net::TcpListener) -> Result<()> {
+pub async fn run_custom(stopper: tokio::sync::oneshot::Receiver<()>, tcp_listener: tokio::net::TcpListener) -> Result<()> {
     let players = Arc::new(Mutex::new(Vec::<Player>::new()));
     let players_for_game = Arc::clone(&players);
     let game_process_hdl = tokio::spawn(async move {
@@ -45,7 +46,9 @@ pub async fn run_custom(mut stopper: tokio::sync::oneshot::Receiver<()>, tcp_lis
         crate::Result::Ok(())
     });
 
-    tokio::try_join!(game_process_hdl, network_process_hdl).map_err(|_err| Error::Error)?;
+    let (res1, res2) = tokio::try_join!(game_process_hdl, network_process_hdl).map_err(|_err| Error::Error)?;
+    res1?;
+    res2?;
 
     Ok(())
 }
