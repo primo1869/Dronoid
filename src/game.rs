@@ -182,7 +182,7 @@ fn cycle(
     mut registered_players: ResMut<'_, RegisteredPlayers>,
     mut exit: MessageWriter<AppExit>,
 ) {
-    log::info!("cycle");
+    // log::info!("cycle");
     exit.write_default();
     let mut idxs_to_remove = Vec::<usize>::new();
     let mut i = 0;

@@ -31,6 +31,9 @@ fn setup_logger() {
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> anyhow::Result<()> {
     setup_logger();
-    let _ = dronoid::run(8080).await?;
+    let result = dronoid::run(8080).await;
+    if result.is_err() {
+        log::error!("{}", result.err().unwrap());
+    }
     Ok(())
 }
