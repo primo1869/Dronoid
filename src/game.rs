@@ -1,12 +1,13 @@
-use bevy_app::{App, Update};
+use bevy_app::{App, ScheduleRunnerPlugin, Update};
 use bevy_ecs::{
     component::Component,
     entity::Entity,
     resource::Resource,
     schedule::Schedule,
-    system::{Commands, Query, ResMut},
+    system::{Commands, Query, Res, ResMut},
     world::World,
 };
+use bevy_time::Time;
 use rapier2d::{
     dynamics::{
         CCDSolver, ImpulseJointSet, IntegrationParameters, IslandManager, MultibodyJointSet,
@@ -16,7 +17,7 @@ use rapier2d::{
     math::{Vec2, Vector},
     pipeline::PhysicsPipeline,
 };
-use std::{collections::HashMap, str::FromStr, sync::Arc};
+use std::{collections::HashMap, str::FromStr, sync::Arc, time::Duration};
 use tokio::sync::Mutex;
 
 use crate::{
@@ -70,6 +71,12 @@ struct RapierColliders {
 #[derive(Resource, Default)]
 struct RapierPipeline {
     physics_pipeline: PhysicsPipeline,
+}
+
+#[derive(Resource, Default)]
+struct Players {
+    online: Vec<Player>,
+    registered: HashMap<String, RegisteredPlayer>,
 }
 
 #[derive(Resource, Default)]
@@ -136,47 +143,34 @@ pub(crate) async fn main_loop(players: Arc<Mutex<Vec<Player>>>) {
     let mut registered_players = HashMap::<String, RegisteredPlayer>::new();
 
     log::info!("Main loop is running...");
-
     App::new()
+        .add_plugins(
+            MinimalPlugins.set(ScheduleRunnerPlugin::run_loop(Duration::from_secs_f64(
+                1.0 / 60.0,
+            ))),
+        )
         .add_systems(Update, process_factory)
         .add_systems(Update, rapier_step)
+        .add_systems(Update, cycle)
         .insert_resource(Rapier::default())
         .insert_resource(RapierPipeline::default())
         .insert_resource(RapierBodies::default())
         .insert_resource(RapierColliders::default())
+        // .insert_resource(FixedTime::new_from_secs(FIXED_TIMESTEP))
         .run();
-
-    loop {
-        cycle(
-            TICK_DURATION,
-            players.lock().await.as_mut(),
-            // &mut drones,
-            // &mut buildings,
-            &mut rigid_body_set,
-            &mut collider_set,
-            &mut registered_players,
-        )
-        .await;
-
-        // schedule.run(&mut world);
-        let late_of = (tokio::time::Instant::now() - time_mark).as_secs_f32() / TICK_DURATION;
-        if late_of > 1. {
-            log::warn!("Server is late of {} tick(s)", late_of.trunc())
-        }
-        time_mark += tokio::time::Duration::from_secs_f32(late_of.ceil());
-
-        tokio::time::sleep_until(time_mark).await;
-    }
 }
 
 pub(crate) async fn cycle(
-    delta: f32,
-    players: &mut Vec<Player>,
-    // drones: &mut MultiMap<i64, Drone>,
-    // buildings: &mut MultiMap<i64, Box<dyn Play + Send>>,
-    rigid_body_set: &mut RigidBodySet,
-    collider_set: &mut ColliderSet,
-    registered_players: &mut HashMap<String, RegisteredPlayer>,
+    time: Res<'_, Time>,
+    rigid_body_set: ResMut<'_, RapierBodies>,
+    collider_set: ResMut<'_, RapierColliders>,
+    players: ResMut<'_, Players>, // delta: f32,
+                                  // players: &mut Vec<Player>,
+                                  // // drones: &mut MultiMap<i64, Drone>,
+                                  // // buildings: &mut MultiMap<i64, Box<dyn Play + Send>>,
+                                  // rigid_body_set: &mut RigidBodySet,
+                                  // collider_set: &mut ColliderSet,
+                                  // registered_players: &mut HashMap<String, RegisteredPlayer>,
 ) {
     let mut idxs_to_remove = Vec::<usize>::new();
     let mut i = 0;

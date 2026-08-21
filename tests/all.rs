@@ -1,6 +1,3 @@
-use test_helpers::before_all;
-
-#[before_all]
 #[cfg(test)]
 mod tests {
     use anyhow::bail;
@@ -101,9 +98,9 @@ mod tests {
         }
     }
 
-    fn before_all() {
-        setup_logger();
-    }
+    // fn before_all() {
+    //     setup_logger();
+    // }
 
     #[tokio::test]
     async fn test_01_run() -> anyhow::Result<()> {
