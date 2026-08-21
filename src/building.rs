@@ -1,15 +1,15 @@
-use rapier2d::dynamics::{RigidBodyHandle, RigidBodySet};
+// use rapier2d::dynamics::RigidBodyHandle;
 
-use crate::{game::Order, program::Program};
+// use crate::program::Program;
 
-pub(crate) struct Beacon {
-    rigid_body_hdl: RigidBodyHandle,
-}
-impl Beacon {
-    pub(crate) fn new(rigid_body_hdl: RigidBodyHandle) -> Self {
-        Self { rigid_body_hdl }
-    }
-}
+// pub(crate) struct Beacon {
+//     rigid_body_hdl: RigidBodyHandle,
+// }
+// impl Beacon {
+//     pub(crate) fn new(rigid_body_hdl: RigidBodyHandle) -> Self {
+//         Self { rigid_body_hdl }
+//     }
+// }
 
 // impl Play for Beacon {
 //     fn discover_radius(&self) -> f32 {
@@ -27,25 +27,25 @@ impl Beacon {
 //     }
 // }
 
-pub(crate) struct Factory {
-    pub(crate) id: i64,
-    auto_spawn: bool,
-    pub(crate) program: Program,
-    rigid_body_hdl: RigidBodyHandle,
-    cooldown: f32,
-}
+// pub(crate) struct Factory {
+//     pub(crate) id: i64,
+//     auto_spawn: bool,
+//     pub(crate) program: Program,
+//     rigid_body_hdl: RigidBodyHandle,
+//     cooldown: f32,
+// }
 
-impl Factory {
-    pub(crate) fn new(rigid_body_hdl: RigidBodyHandle) -> Self {
-        Self {
-            id: rand::random_range(i64::MIN..i64::MAX),
-            auto_spawn: false,
-            program: Program::default(),
-            rigid_body_hdl,
-            cooldown: 0.,
-        }
-    }
-}
+// impl Factory {
+//     pub(crate) fn new(rigid_body_hdl: RigidBodyHandle) -> Self {
+//         Self {
+//             id: rand::random_range(i64::MIN..i64::MAX),
+//             auto_spawn: false,
+//             program: Program::default(),
+//             rigid_body_hdl,
+//             cooldown: 0.,
+//         }
+//     }
+// }
 
 // impl Play for Factory {
 //     fn discover_radius(&self) -> f32 {

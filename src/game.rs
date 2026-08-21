@@ -23,7 +23,7 @@ use crate::{
     utils::is_name_valid,
 };
 
-pub(crate) enum Order {
+pub(crate) enum _Order {
     AddDrone,
 }
 
@@ -34,22 +34,22 @@ pub(crate) struct RegisteredPlayer {
 
 #[derive(Component)]
 struct ZoneExtension {
-    radius: f32,
+    _radius: f32,
 }
 
 #[derive(Component)]
 struct RigidBody {
-    hdl: RigidBodyHandle,
+    _hdl: RigidBodyHandle,
 }
 
 #[derive(Component)]
-struct ProgramCounter {
+struct _ProgramCounter {
     idx: u16,
 }
 
 #[derive(Component)]
 struct Factory {
-    auto_spawn: bool,
+    _auto_spawn: bool,
     cooldown: f64,
 }
 
@@ -105,22 +105,22 @@ fn process_factory(query: Query<&mut Factory>, mut rapier_bodies: ResMut<RapierB
             let hdl = rapier_bodies.0.insert(factory_rigid_body);
             let factory_collider = ColliderBuilder::ball(5.).build();
             rapier_colliders.0.insert_with_parent(factory_collider, hdl, &mut rapier_bodies.0);
-            commands.spawn((ZoneExtension { radius: 25. }, RigidBody { hdl }));
+            commands.spawn((ZoneExtension { _radius: 25. }, RigidBody { _hdl: hdl }));
         }
     }
 }
 
 fn rapier_step(
-    mut rapier_gravity: ResMut<RapierGravity>,
-    mut rapier_integration_parameters: ResMut<RapierIntegrationParameters>,
+    rapier_gravity: ResMut<RapierGravity>,
+    rapier_integration_parameters: ResMut<RapierIntegrationParameters>,
     mut rapier_island_manager: ResMut<RapierIslandManager>,
     mut rapier_broad_phase: ResMut<RapierBroadPhase>,
     mut rapier_narrow_phase: ResMut<RapierNarrowPhase>,
     mut rapier_impulse_joint_set: ResMut<RapierImpulseJointSet>,
     mut rapier_multibody_joint_set: ResMut<RapierMultibodyJointSet>,
     mut rapier_ccd_solver: ResMut<RapierCCDSolver>,
-    mut rapier_physics_hook: ResMut<RapierPhysicsHook>,
-    mut rapier_event_handler: ResMut<RapierEventHandler>,
+    rapier_physics_hook: ResMut<RapierPhysicsHook>,
+    rapier_event_handler: ResMut<RapierEventHandler>,
     mut rapier_pipeline: ResMut<RapierPipeline>,
     mut rapier_bodies: ResMut<RapierBodies>,
     mut rapier_colliders: ResMut<RapierColliders>,
@@ -145,7 +145,7 @@ fn startup() {
     log::info!("Game loop is running !");
 }
 
-pub(crate) async fn process(players: Arc<Mutex<Vec<Player>>>) -> Result<()> {
+pub(crate) async fn process(_players: Arc<Mutex<Vec<Player>>>) -> Result<()> {
     let exit = App::new()
         .add_plugins(MinimalPlugins.set(ScheduleRunnerPlugin::run_loop(Duration::from_secs_f64(TICK_DURATION))))
         .add_systems(Startup, startup)
@@ -268,7 +268,7 @@ fn cycle(
                         idxs_to_remove.push(i);
                     }
                 }
-                PlayerAction::PlaceFactory((pos_x, pos_y)) => {
+                PlayerAction::PlaceFactory((_pos_x, _pos_y)) => {
                     // let player_buildings = buildings.get_vec(&player.id).unwrap();
                     // for building in player_buildings {
                     //     let building_pos = building.position(rigid_body_set);
@@ -290,7 +290,7 @@ fn cycle(
                     //     }
                     // }
                 }
-                PlayerAction::ControlFactory { id, control } => {
+                PlayerAction::ControlFactory { id: _, control: _ } => {
                     // let player_buildings = buildings.get_vec_mut(&player.id).unwrap();
                     // for building in player_buildings {
                     //     if building.id() == id {

@@ -1,18 +1,16 @@
-use crate::Result;
-use crate::error::Error;
-use crate::program::Instruction::{ChangeDirection, Jump, Throttle};
+// use crate::program::_Instruction::{ChangeDirection, Jump, Throttle};
 
-pub(crate) enum Instruction {
+pub(crate) enum _Instruction {
     Jump(u16),
     Throttle(bool),
     ChangeDirection(f32, f32),
 }
 
-pub(crate) struct Program {
-    instructions: Vec<Instruction>,
+pub(crate) struct _Program {
+    instructions: Vec<_Instruction>,
 }
 
-impl Program {
+impl _Program {
     // pub(crate) fn exec(&self, drone: &mut Drone) -> Result<()> {
     //     let maybe_instruction = self.instructions.iter().nth(drone.program_counter as usize);
     //     if maybe_instruction.is_none() {
@@ -27,13 +25,13 @@ impl Program {
     //     Ok(())
     // }
 
-    pub fn default() -> Self {
-        Self {
-            instructions: vec![
-                Throttle(true),
-                ChangeDirection(rand::random_range(-1f32..1f32), rand::random_range(-1f32..1f32)),
-                Jump(2),
-            ],
-        }
-    }
+    // pub fn default() -> Self {
+    //     Self {
+    //         instructions: vec![
+    //             Throttle(true),
+    //             ChangeDirection(rand::random_range(-1f32..1f32), rand::random_range(-1f32..1f32)),
+    //             Jump(2),
+    //         ],
+    //     }
+    // }
 }
