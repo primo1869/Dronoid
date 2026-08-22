@@ -1,7 +1,7 @@
 use colored::Colorize;
 use futures::StreamExt;
 use listen_signal::wait;
-use log::LevelFilter;
+
 use std::str::FromStr;
 
 fn setup_logger() {

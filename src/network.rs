@@ -1,8 +1,7 @@
-use std::sync::Arc;
-use std::time::Duration;
-
 use crossbeam_channel::{Receiver, Sender};
 use futures::{SinkExt, StreamExt};
+use std::sync::Arc;
+use std::time::Duration;
 use tokio::sync::Mutex;
 use tokio::{net::TcpStream, time};
 use tokio_tungstenite::{WebSocketStream, tungstenite::Message};
@@ -11,34 +10,21 @@ use crate::Result;
 use crate::player::Player;
 use crate::protocol::{PlayerAction, ServerMessage};
 
-pub(crate) async fn process(
-    mut stopper: tokio::sync::oneshot::Receiver<()>,
-    tcp_listener: tokio::net::TcpListener,
-    players: Arc<Mutex<Vec<Player>>>,
-) -> Result<()> {
-    log::info!("Listenning on port {}...", tcp_listener.local_addr().unwrap().port());
+pub(crate) async fn process(tcp_listener: tokio::net::TcpListener, player_tx: Sender<Player>) -> Result<()> {
     loop {
-        let players_for_client = Arc::clone(&players);
-        tokio::select! {
-            _ = &mut stopper => {
-                log::info!("Received stop signal!");
-                return Ok(());
-            }
-            Ok((tcp_stream, addr)) = tcp_listener.accept() => {
-                tokio::spawn(async move {
-                    log::trace!("New connection from {}", addr);
-                    let maybe_websocket = tokio_tungstenite::accept_async(tcp_stream).await;
-                    if maybe_websocket.is_err() {
-                        log::info!("Upgrade to websocket failed");
-                        return;
-                    }
-                    let websocket = maybe_websocket.unwrap();
-                    let (network_sender, loop_receiver) = crossbeam_channel::unbounded::<PlayerAction>();
-                    let (loop_sender, network_receiver) = crossbeam_channel::unbounded::<(bool, ServerMessage)>();
-                    players_for_client.lock().await.push(Player::new(addr, loop_sender, loop_receiver));
-                    process_client(websocket, network_sender, network_receiver).await;
-                });
-            }
+        if let Ok((tcp_stream, addr)) = tcp_listener.accept() {
+            tokio::spawn(async move {
+                let maybe_websocket = tokio_tungstenite::accept_async(tcp_stream).await;
+                if maybe_websocket.is_err() {
+                    return;
+                }
+                let websocket = maybe_websocket.unwrap();
+                let (network_sender, loop_receiver) = crossbeam_channel::bounded::<PlayerAction>(100);
+                let (loop_sender, network_receiver) = crossbeam_channel::bounded::<(bool, ServerMessage)>(100);
+                let player = Player::new(addr, loop_sender, loop_receiver);
+
+                process_client(websocket, network_sender, network_receiver).await;
+            });
         }
     }
 }
@@ -57,7 +43,7 @@ pub(crate) async fn process_client(mut websocket: WebSocketStream<TcpStream>, se
             }
             Some(maybe_msg) = websocket.next() => {
                 if maybe_msg.is_err() {
-                    log::trace!("Error on read");
+
                     return;
                 }
                 let message = maybe_msg.unwrap();

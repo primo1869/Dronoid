@@ -29,35 +29,9 @@ pub async fn run(stopper_rx: crossbeam_channel::Receiver<()>, port: u16) -> Resu
     Ok(())
 }
 
-pub async fn run_with_listener(stopper_rx: crossbeam_channel::Receiver<()>, tcp_listener: tokio::net::TcpListener) -> Result<()> {
-    let players = Arc::new(Mutex::new(Vec::<Player>::new()));
-    let players_for_game_loop = Arc::clone(&players);
-
-    let game_process_hdl = tokio::spawn(async move {
-        game::process(stopper_rx.clone(), players_for_game_loop);
-    });
-
-    let network_process_hdl = tokio::spawn(async move {
-        network::process(stopper_rx, tcp_listener, players).await?;
-        crate::Result::Ok(())
-    });
-
-    // game_process_hdl.abort();
-
-    tokio::select! {
-        result = game_process_hdl => {
-            log::info!("Game loop interrupted");
-            if result.is_err() {
-                log::error!("{}", result.err().unwrap());
-            }
-        },
-        result = network_process_hdl => {
-            log::info!("Network loop interrupted");
-            if result.is_err() {
-                log::error!("{}", result.err().unwrap());
-            }
-        }
-    };
-
-    Ok(())
+pub async fn run_with_listener(stopper_rx: crossbeam_channel::Receiver<()>, tcp_listener: tokio::net::TcpListener) {
+    let (player_tx, player_rx) = crossbeam_channel::bounded::<Player>(100);
+    let network_process_hdl = tokio::spawn(network::process(tcp_listener, player_tx));
+    game::process(stopper_rx, player_rx);
+    network_process_hdl.abort();
 }

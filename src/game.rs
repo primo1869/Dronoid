@@ -93,7 +93,10 @@ struct RapierColliders(ColliderSet);
 struct RapierPipeline(PhysicsPipeline);
 
 #[derive(Resource, Default)]
-struct OnlinePlayers(Vec<Player>);
+struct Stopper(crossbeam_channel::Receiver<()>);
+
+#[derive(Resource, Default)]
+struct PlayerReceiver(crossbeam_channel::Receiver<()>);
 
 #[derive(Resource, Default)]
 struct RegisteredPlayers(HashMap<String, RegisteredPlayer>);
@@ -141,11 +144,9 @@ fn rapier_step(
     );
 }
 
-fn startup() {
-    log::info!("Game loop is running !");
-}
+fn startup() {}
 
-pub(crate) fn process(players: Arc<Mutex<Vec<Player>>>) {
+pub(crate) fn process(stopper_rx: crossbeam_channel::Receiver<()>, player_rx: Receiver<Player>) {
     App::new()
         .add_plugins(MinimalPlugins.set(ScheduleRunnerPlugin::run_loop(Duration::from_secs_f64(TICK_DURATION))))
         .add_systems(Startup, startup)
@@ -177,7 +178,6 @@ fn cycle(
     mut registered_players: ResMut<'_, RegisteredPlayers>,
     // mut exit: MessageWriter<AppExit>,
 ) {
-    // log::info!("cycle");
     // exit.write_default();
     let mut idxs_to_remove = Vec::<usize>::new();
     let mut i = 0;
@@ -194,7 +194,6 @@ fn cycle(
             Ok(player_action) => match player_action {
                 PlayerAction::Authentication { player_name } => {
                     let response: (bool, ServerMessage) = if player.authenticated {
-                        log::trace!("{}: Already authenticated", player.addr);
                         idxs_to_remove.push(i);
                         (
                             false,
@@ -205,7 +204,6 @@ fn cycle(
                             }),
                         )
                     } else if !is_name_valid(&player_name) {
-                        log::trace!("{}: Invalid name {}", player.addr, player_name);
                         idxs_to_remove.push(i);
                         (
                             false,
@@ -216,7 +214,6 @@ fn cycle(
                             }),
                         )
                     } else if player_names.iter().find(|&other_name| other_name == &player_name).is_some() {
-                        log::trace!("{}: Name already taken: {}", player.addr, player_name);
                         idxs_to_remove.push(i);
                         (
                             false,
@@ -227,7 +224,6 @@ fn cycle(
                             }),
                         )
                     } else {
-                        log::trace!("{}: Authenticated: {}", player.addr, player_name);
                         player.authenticated = true;
                         player.name = player_name.clone();
                         let maybe_registered_player = registered_players.0.get(&player_name);
