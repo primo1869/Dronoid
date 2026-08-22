@@ -11,14 +11,14 @@ pub(crate) struct Player {
     pub(crate) spawn_point: (f32, f32),
     pub(crate) authenticated: bool,
     pub(crate) name: String,
-    pub(crate) addr: SocketAddr,
+    pub(crate) _addr: SocketAddr,
 }
 
 impl Player {
-    pub(crate) fn new(addr: SocketAddr, sender: Sender<(bool, ServerMessage)>, receiver: Receiver<PlayerAction>) -> Player {
+    pub(crate) fn new(_addr: SocketAddr, sender: Sender<(bool, ServerMessage)>, receiver: Receiver<PlayerAction>) -> Player {
         Player {
             id: i64::default(),
-            addr,
+            _addr,
             sender,
             receiver,
             spawn_point: (0., 0.),
