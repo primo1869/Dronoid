@@ -6,18 +6,22 @@ use bevy_ecs::{
     resource::Resource,
     system::{Commands, Query, ResMut},
 };
+use crossbeam_channel::Receiver;
 use crossbeam_channel::TryRecvError;
+use crossbeam_channel::TryRecvError::Disconnected;
 use rapier2d::{
-    dynamics::{CCDSolver, ImpulseJointSet, IntegrationParameters, IslandManager, MultibodyJointSet, RigidBodyBuilder, RigidBodyHandle, RigidBodySet},
+    dynamics::{
+        CCDSolver, ImpulseJointSet, IntegrationParameters, IslandManager, MultibodyJointSet, RigidBodyBuilder, RigidBodyHandle,
+        RigidBodySet,
+    },
     geometry::{ColliderBuilder, ColliderSet, DefaultBroadPhase, NarrowPhase},
     math::{Vec2, Vector},
     pipeline::PhysicsPipeline,
 };
-use std::{collections::HashMap, str::FromStr, sync::Arc, time::Duration};
-use tokio::sync::Mutex;
+use std::{collections::HashMap, str::FromStr, time::Duration};
 
 use crate::{
-    Result, TICK_DURATION,
+    TICK_DURATION,
     player::Player,
     protocol::{AuthenticationResponse, PlayerAction, ServerMessage},
     utils::is_name_valid,
@@ -92,16 +96,24 @@ struct RapierColliders(ColliderSet);
 #[derive(Resource, Default)]
 struct RapierPipeline(PhysicsPipeline);
 
-#[derive(Resource, Default)]
-struct Stopper(crossbeam_channel::Receiver<()>);
+#[derive(Resource)]
+struct Stopper(Receiver<()>);
+
+#[derive(Resource)]
+struct PlayerReceiver(Receiver<Player>);
 
 #[derive(Resource, Default)]
-struct PlayerReceiver(crossbeam_channel::Receiver<()>);
+struct OnlinePlayers(Vec<Player>);
 
 #[derive(Resource, Default)]
 struct RegisteredPlayers(HashMap<String, RegisteredPlayer>);
 
-fn process_factory(query: Query<&mut Factory>, mut rapier_bodies: ResMut<RapierBodies>, mut rapier_colliders: ResMut<RapierColliders>, mut commands: Commands) {
+fn process_factory(
+    query: Query<&mut Factory>,
+    mut rapier_bodies: ResMut<RapierBodies>,
+    mut rapier_colliders: ResMut<RapierColliders>,
+    mut commands: Commands,
+) {
     for factory in query {
         if factory.cooldown < 0. && factory.cooldown - TICK_DURATION <= 0. {
             let factory_rigid_body = RigidBodyBuilder::fixed().translation(Vec2::new(0., 0.)).build();
@@ -144,7 +156,25 @@ fn rapier_step(
     );
 }
 
-fn startup() {}
+fn startup() {
+    log::info!("Game loop is running !");
+}
+
+fn interrupt(stopper: Res<'_, Stopper>, mut exit: MessageWriter<AppExit>) {
+    if match stopper.0.try_recv() {
+        Err(Disconnected) => true,
+        Ok(_) => true,
+        _ => false,
+    } {
+        exit.write_default();
+    }
+}
+
+fn new_player(player_rx: ResMut<PlayerReceiver>, mut online_players: ResMut<OnlinePlayers>) {
+    while let Ok(player) = player_rx.0.try_recv() {
+        online_players.0.push(player);
+    }
+}
 
 pub(crate) fn process(stopper_rx: crossbeam_channel::Receiver<()>, player_rx: Receiver<Player>) {
     App::new()
@@ -152,6 +182,8 @@ pub(crate) fn process(stopper_rx: crossbeam_channel::Receiver<()>, player_rx: Re
         .add_systems(Startup, startup)
         .add_systems(Update, process_factory)
         .add_systems(Update, rapier_step)
+        .add_systems(Update, interrupt)
+        .add_systems(Update, new_player)
         .add_systems(Update, cycle)
         .insert_resource(RapierGravity::default())
         .insert_resource(RapierBroadPhase::default())
@@ -166,7 +198,8 @@ pub(crate) fn process(stopper_rx: crossbeam_channel::Receiver<()>, player_rx: Re
         .insert_resource(RapierPipeline::default())
         .insert_resource(RapierBodies::default())
         .insert_resource(RapierColliders::default())
-        .insert_resource(OnlinePlayers)
+        .insert_resource(Stopper { 0: stopper_rx })
+        .insert_resource(PlayerReceiver { 0: player_rx })
         .insert_resource(RegisteredPlayers::default())
         .run();
 }
@@ -176,9 +209,7 @@ fn cycle(
     mut collider_set: ResMut<'_, RapierColliders>,
     mut online_players: ResMut<'_, OnlinePlayers>,
     mut registered_players: ResMut<'_, RegisteredPlayers>,
-    // mut exit: MessageWriter<AppExit>,
 ) {
-    // exit.write_default();
     let mut idxs_to_remove = Vec::<usize>::new();
     let mut i = 0;
     let player_names: Vec<String> = online_players.0.iter().map(|player| player.name.clone()).collect();

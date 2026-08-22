@@ -5,8 +5,8 @@ authors = ["Primo <primo.contact@mail.fr>"]
 edition = '2024'
 
 [lib]
-doctest = false
 test = false
+doctest = false
 
 [[bin]]
 name = "server"
@@ -27,7 +27,6 @@ crossbeam-channel = "0.5.16"
 fern = "0.7.1"
 futures = "0.3.34"
 futures-util = "0.3.34"
-listen_signal = "0.1.16"
 log = "0.4.33"
 multimap = "0.10.1"
 rand = "0.10.2"
@@ -35,5 +34,11 @@ rapier2d = "0.35.2"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
 thiserror = "2.0.20"
-tokio = { version = "1.53.1", features = ["full"] }
+tokio = { version = "1.53.1", features = [
+    "signal",
+    "rt",
+    "macros",
+    "time",
+    "rt-multi-thread",
+] }
 tokio-tungstenite = "0.30.0"

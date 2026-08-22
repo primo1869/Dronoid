@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
     use anyhow::bail;
+    use crossbeam_channel::{Sender, bounded};
     use dronoid::protocol::{AuthenticationResponse, PlayerAction, ServerMessage};
     use futures::{SinkExt, StreamExt};
     use std::{net::SocketAddr, str::FromStr};
@@ -13,14 +14,11 @@ mod tests {
         tungstenite::{self},
     };
 
-    async fn bootstrap() -> anyhow::Result<(tokio::sync::oneshot::Sender<()>, tokio::task::JoinHandle<Result<(), anyhow::Error>>, SocketAddr)> {
-        let (tx, rx) = tokio::sync::oneshot::channel::<()>();
+    async fn bootstrap() -> anyhow::Result<(Sender<()>, tokio::task::JoinHandle<()>, SocketAddr)> {
+        let (tx, rx) = bounded(1);
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await?;
         let addr = listener.local_addr().unwrap();
-        let hdl = tokio::spawn(async {
-            dronoid::run_with_listener(rx, listener).await?;
-            anyhow::Ok(())
-        });
+        let hdl = tokio::spawn(dronoid::run_with_listener(rx, listener));
         Ok((tx, hdl, addr))
     }
 
@@ -28,8 +26,9 @@ mod tests {
         addr: SocketAddr,
         player_name: String,
     ) -> anyhow::Result<(WebSocketStream<MaybeTlsStream<TcpStream>>, AuthenticationResponse)> {
-        let websocket_request =
-            tungstenite::ClientRequestBuilder::new(tungstenite::http::Uri::from_str(format!("ws://{}:{}", addr.ip(), addr.port()).as_str()).unwrap());
+        let websocket_request = tungstenite::ClientRequestBuilder::new(
+            tungstenite::http::Uri::from_str(format!("ws://{}:{}", addr.ip(), addr.port()).as_str()).unwrap(),
+        );
 
         let (mut websocket, _response) = tokio_tungstenite::connect_async(websocket_request).await?;
 
@@ -60,7 +59,7 @@ mod tests {
             bail!("Tests: stop send error");
         }
 
-        hdl.await??;
+        hdl.await?;
 
         anyhow::Ok(())
     }
@@ -79,7 +78,7 @@ mod tests {
             bail!("Tests: stop send error");
         }
 
-        hdl.await??;
+        hdl.await?;
         anyhow::Ok(())
     }
 
@@ -87,8 +86,9 @@ mod tests {
     async fn test_03_websocket_upgrade() -> anyhow::Result<()> {
         let (tx, hdl, addr) = bootstrap().await?;
 
-        let websocket_request =
-            tungstenite::ClientRequestBuilder::new(tungstenite::http::Uri::from_str(format!("ws://{}:{}", addr.ip(), addr.port()).as_str()).unwrap());
+        let websocket_request = tungstenite::ClientRequestBuilder::new(
+            tungstenite::http::Uri::from_str(format!("ws://{}:{}", addr.ip(), addr.port()).as_str()).unwrap(),
+        );
 
         tokio_tungstenite::connect_async(websocket_request).await?;
 
@@ -96,7 +96,7 @@ mod tests {
             bail!("Tests: stop send error");
         }
 
-        hdl.await??;
+        hdl.await?;
         anyhow::Ok(())
     }
 
@@ -114,7 +114,7 @@ mod tests {
             bail!("Tests: stop send error");
         }
 
-        hdl.await??;
+        hdl.await?;
         anyhow::Ok(())
     }
 
@@ -132,7 +132,7 @@ mod tests {
             bail!("Tests: stop send error");
         }
 
-        hdl.await??;
+        hdl.await?;
         anyhow::Ok(())
     }
 
@@ -150,7 +150,7 @@ mod tests {
             bail!("Tests: stop send error");
         }
 
-        hdl.await??;
+        hdl.await?;
         anyhow::Ok(())
     }
 
@@ -179,7 +179,7 @@ mod tests {
             bail!("Tests: stop send error");
         }
 
-        hdl.await??;
+        hdl.await?;
         anyhow::Ok(())
     }
 }

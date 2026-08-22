@@ -1,9 +1,8 @@
 use crossbeam_channel::{Receiver, Sender};
 use futures::{SinkExt, StreamExt};
-use std::sync::Arc;
 use std::time::Duration;
-use tokio::sync::Mutex;
-use tokio::{net::TcpStream, time};
+use tokio::net::TcpStream;
+use tokio::time;
 use tokio_tungstenite::{WebSocketStream, tungstenite::Message};
 
 use crate::Result;
@@ -12,7 +11,8 @@ use crate::protocol::{PlayerAction, ServerMessage};
 
 pub(crate) async fn process(tcp_listener: tokio::net::TcpListener, player_tx: Sender<Player>) -> Result<()> {
     loop {
-        if let Ok((tcp_stream, addr)) = tcp_listener.accept() {
+        let player_tx_cln = player_tx.clone();
+        if let Ok((tcp_stream, addr)) = tcp_listener.accept().await {
             tokio::spawn(async move {
                 let maybe_websocket = tokio_tungstenite::accept_async(tcp_stream).await;
                 if maybe_websocket.is_err() {
@@ -21,7 +21,9 @@ pub(crate) async fn process(tcp_listener: tokio::net::TcpListener, player_tx: Se
                 let websocket = maybe_websocket.unwrap();
                 let (network_sender, loop_receiver) = crossbeam_channel::bounded::<PlayerAction>(100);
                 let (loop_sender, network_receiver) = crossbeam_channel::bounded::<(bool, ServerMessage)>(100);
-                let player = Player::new(addr, loop_sender, loop_receiver);
+                if player_tx_cln.send(Player::new(addr, loop_sender, loop_receiver)).is_err() {
+                    return;
+                }
 
                 process_client(websocket, network_sender, network_receiver).await;
             });
@@ -29,7 +31,11 @@ pub(crate) async fn process(tcp_listener: tokio::net::TcpListener, player_tx: Se
     }
 }
 
-pub(crate) async fn process_client(mut websocket: WebSocketStream<TcpStream>, sender: Sender<PlayerAction>, receiver: Receiver<(bool, ServerMessage)>) {
+pub(crate) async fn process_client(
+    mut websocket: WebSocketStream<TcpStream>,
+    sender: Sender<PlayerAction>,
+    receiver: Receiver<(bool, ServerMessage)>,
+) {
     let mut interval = time::interval(Duration::from_secs_f32(1. / 60.));
     loop {
         tokio::select! {

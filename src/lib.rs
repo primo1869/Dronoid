@@ -11,9 +11,6 @@ pub(crate) mod utils;
 
 pub mod protocol;
 
-use std::sync::Arc;
-use tokio::sync::Mutex;
-
 use crate::{error::Error, player::Player};
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -25,7 +22,7 @@ pub async fn run(stopper_rx: crossbeam_channel::Receiver<()>, port: u16) -> Resu
         .await
         .map_err(|_err| Error::Error)?;
 
-    run_with_listener(stopper_rx, tcp_listener).await?;
+    run_with_listener(stopper_rx, tcp_listener).await;
     Ok(())
 }
 
