@@ -5,11 +5,11 @@ use tokio::net::TcpStream;
 use tokio::time;
 use tokio_tungstenite::{WebSocketStream, tungstenite::Message};
 
-use crate::Result;
 use crate::player::Player;
 use crate::protocol::{PlayerAction, ServerMessage};
 
-pub(crate) async fn process(tcp_listener: tokio::net::TcpListener, player_tx: Sender<Player>) -> Result<()> {
+pub(crate) async fn process(tcp_listener: tokio::net::TcpListener, player_tx: Sender<Player>) {
+    log::info!("Network loop is running");
     loop {
         let player_tx_cln = player_tx.clone();
         if let Ok((tcp_stream, addr)) = tcp_listener.accept().await {

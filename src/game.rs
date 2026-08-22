@@ -157,7 +157,7 @@ fn rapier_step(
 }
 
 fn startup() {
-    log::info!("Game loop is running !");
+    log::info!("Game loop is running");
 }
 
 fn interrupt(stopper: Res<'_, Stopper>, mut exit: MessageWriter<AppExit>) {
