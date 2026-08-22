@@ -1,4 +1,6 @@
 use colored::Colorize;
+use futures::StreamExt;
+use listen_signal::wait;
 use log::LevelFilter;
 use std::str::FromStr;
 
@@ -31,9 +33,16 @@ fn setup_logger() {
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> anyhow::Result<()> {
     setup_logger();
-    let result = dronoid::run(8080).await;
-    if result.is_err() {
-        log::error!("{}", result.err().unwrap());
-    }
+
+    let (stopper_tx, stopper_rx) = crossbeam_channel::bounded::<()>(1);
+
+    tokio::spawn(async move {
+        let mut signals = wait(&listen_signal::STOP);
+        signals.next().await;
+        stopper_tx.send(()).await;
+    });
+
+    dronoid::run(stopper_rx, 8080).await?;
+
     Ok(())
 }

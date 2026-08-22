@@ -18,7 +18,6 @@ use tokio::sync::Mutex;
 
 use crate::{
     Result, TICK_DURATION,
-    error::Error,
     player::Player,
     protocol::{AuthenticationResponse, PlayerAction, ServerMessage},
     utils::is_name_valid,
@@ -146,8 +145,8 @@ fn startup() {
     log::info!("Game loop is running !");
 }
 
-pub(crate) async fn process(_players: Arc<Mutex<Vec<Player>>>) -> Result<()> {
-    let exit = App::new()
+pub(crate) fn process(players: Arc<Mutex<Vec<Player>>>) {
+    App::new()
         .add_plugins(MinimalPlugins.set(ScheduleRunnerPlugin::run_loop(Duration::from_secs_f64(TICK_DURATION))))
         .add_systems(Startup, startup)
         .add_systems(Update, process_factory)
@@ -166,13 +165,9 @@ pub(crate) async fn process(_players: Arc<Mutex<Vec<Player>>>) -> Result<()> {
         .insert_resource(RapierPipeline::default())
         .insert_resource(RapierBodies::default())
         .insert_resource(RapierColliders::default())
-        .insert_resource(OnlinePlayers::default())
+        .insert_resource(OnlinePlayers)
         .insert_resource(RegisteredPlayers::default())
         .run();
-    if exit.is_error() {
-        return Err(Error::Error);
-    }
-    Ok(())
 }
 
 fn cycle(
@@ -180,10 +175,10 @@ fn cycle(
     mut collider_set: ResMut<'_, RapierColliders>,
     mut online_players: ResMut<'_, OnlinePlayers>,
     mut registered_players: ResMut<'_, RegisteredPlayers>,
-    mut exit: MessageWriter<AppExit>,
+    // mut exit: MessageWriter<AppExit>,
 ) {
     // log::info!("cycle");
-    exit.write_default();
+    // exit.write_default();
     let mut idxs_to_remove = Vec::<usize>::new();
     let mut i = 0;
     let player_names: Vec<String> = online_players.0.iter().map(|player| player.name.clone()).collect();

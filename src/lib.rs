@@ -20,35 +20,44 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 const TICK_DURATION: f64 = 1.0 / 60.0;
 
-pub async fn run(port: u16) -> Result<()> {
-    let (_sd, rx) = tokio::sync::oneshot::channel::<()>();
-
+pub async fn run(stopper_rx: crossbeam_channel::Receiver<()>, port: u16) -> Result<()> {
     let tcp_listener = tokio::net::TcpListener::bind(format!("127.0.0.1:{}", port))
         .await
         .map_err(|_err| Error::Error)?;
 
-    run_custom(rx, tcp_listener).await?;
+    run_with_listener(stopper_rx, tcp_listener).await?;
     Ok(())
 }
 
-pub async fn run_custom(stopper: tokio::sync::oneshot::Receiver<()>, tcp_listener: tokio::net::TcpListener) -> Result<()> {
+pub async fn run_with_listener(stopper_rx: crossbeam_channel::Receiver<()>, tcp_listener: tokio::net::TcpListener) -> Result<()> {
     let players = Arc::new(Mutex::new(Vec::<Player>::new()));
-    let players_for_game = Arc::clone(&players);
-    let game_process_hdl = tokio::spawn(async move {
-        game::process(players_for_game).await?;
-        crate::Result::Ok(())
-    });
+    let players_for_game_loop = Arc::clone(&players);
 
-    log::info!("Server listenning on port {}...", tcp_listener.local_addr().unwrap().port());
+    let game_process_hdl = tokio::spawn(async move {
+        game::process(stopper_rx.clone(), players_for_game_loop);
+    });
 
     let network_process_hdl = tokio::spawn(async move {
-        network::process(stopper, tcp_listener, players).await?;
+        network::process(stopper_rx, tcp_listener, players).await?;
         crate::Result::Ok(())
     });
 
-    let (res1, res2) = tokio::try_join!(game_process_hdl, network_process_hdl).map_err(|_err| Error::Error)?;
-    res1?;
-    res2?;
+    // game_process_hdl.abort();
+
+    tokio::select! {
+        result = game_process_hdl => {
+            log::info!("Game loop interrupted");
+            if result.is_err() {
+                log::error!("{}", result.err().unwrap());
+            }
+        },
+        result = network_process_hdl => {
+            log::info!("Network loop interrupted");
+            if result.is_err() {
+                log::error!("{}", result.err().unwrap());
+            }
+        }
+    };
 
     Ok(())
 }

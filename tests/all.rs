@@ -18,7 +18,7 @@ mod tests {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await?;
         let addr = listener.local_addr().unwrap();
         let hdl = tokio::spawn(async {
-            dronoid::run_custom(rx, listener).await?;
+            dronoid::run_with_listener(rx, listener).await?;
             anyhow::Ok(())
         });
         Ok((tx, hdl, addr))

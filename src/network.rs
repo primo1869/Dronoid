@@ -16,6 +16,7 @@ pub(crate) async fn process(
     tcp_listener: tokio::net::TcpListener,
     players: Arc<Mutex<Vec<Player>>>,
 ) -> Result<()> {
+    log::info!("Listenning on port {}...", tcp_listener.local_addr().unwrap().port());
     loop {
         let players_for_client = Arc::clone(&players);
         tokio::select! {
@@ -47,7 +48,7 @@ pub(crate) async fn process_client(mut websocket: WebSocketStream<TcpStream>, se
     loop {
         tokio::select! {
             _ = interval.tick() => {
-                if let Ok((keep, server_message)) = receiver.try_recv() {
+                while let Ok((keep, server_message)) = receiver.try_recv() {
                     let text = serde_json::to_string(&server_message).unwrap();
                     if websocket.send(Message::Text(text.into())).await.is_err() || !keep {
                         return;
