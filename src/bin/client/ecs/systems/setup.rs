@@ -1,3 +1,5 @@
+use std::ops::DerefMut;
+
 use bevy::{
     color::palettes::{
         css::{DARK_SLATE_GRAY, WHITE},
@@ -16,7 +18,7 @@ use bevy_ecs::{
 use bevy_framepace::{FramepaceSettings, Limiter};
 use display_info::DisplayInfo;
 
-use crate::ecs::resources;
+use crate::ecs::{components, resources};
 
 pub fn setup_display(
     mut q_window: Query<&mut Window, With<PrimaryWindow>>,
@@ -48,6 +50,7 @@ pub fn setup_connect_page(
     asset_server: Res<AssetServer>,
     mut game_sprites: ResMut<resources::GameSprites>,
     mut framepace_settings: ResMut<FramepaceSettings>,
+    mut state: ResMut<resources::State>,
     mut commands: Commands,
 ) {
     framepace_settings.limiter = Limiter::from_framerate(60.0);
@@ -163,7 +166,7 @@ pub fn setup_connect_page(
                         AutoFocus,
                     ));
                     parent.spawn((
-                        Button,
+                        components::ConnectButton,
                         Node {
                             width: px(200),
                             height: px(50),
@@ -191,4 +194,6 @@ pub fn setup_connect_page(
             ..default()
         })
         .add_child(welcome_menu_id);
+
+    *state.deref_mut() = resources::State::ShowConnectPage;
 }

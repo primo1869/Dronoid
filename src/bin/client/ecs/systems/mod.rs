@@ -1,12 +1,17 @@
 use bevy::{
     input_focus::{FocusCause, InputFocus},
     prelude::*,
+    text::TextSection,
 };
 use bevy_ecs::{
     entity::Entity,
     query::With,
     system::{Query, ResMut},
 };
+use std::{ops::DerefMut, str::FromStr};
+use tokio_tungstenite::tungstenite;
+
+use crate::ecs::{components::ConnectButton, resources};
 
 pub mod setup;
 
@@ -52,49 +57,67 @@ const NORMAL_BUTTON: Color = Color::srgb(0.15, 0.15, 0.15);
 const HOVERED_BUTTON: Color = Color::srgb(0.25, 0.25, 0.25);
 // const PRESSED_BUTTON: Color = Color::srgb(0.35, 0.75, 0.35);
 
-pub fn connect_system(
+pub fn show_connect_page(
     mut input_focus: ResMut<InputFocus>,
+    server_host: ResMut<resources::ServerHost>,
+    server_port: ResMut<resources::ServerPort>,
     mut interaction_query: Query<
         (
             Entity,
+            &ConnectButton,
             &Interaction,
             &mut BackgroundColor,
             &mut BorderColor,
-            &mut Button,
             &Children,
         ),
         Changed<Interaction>,
     >,
     mut text_query: Query<&mut Text>,
 ) {
-    for (entity, interaction, mut color, mut border_color, mut button, children) in
-        &mut interaction_query
-    {
+    for (entity, _, interaction, mut color, mut border_color, children) in &mut interaction_query {
         let mut text = text_query.get_mut(children[0]).unwrap();
 
         match *interaction {
             Interaction::Pressed => {
-                // input_focus.set(entity, FocusCause::Pressed);
-                // **text = "Press".to_string();
-                // *color = PRESSED_BUTTON.into();
-                // *border_color = BorderColor::all(RED);
-
-                // button.set_changed();
+                server_host.0 = text.get_text().to_string();
+                input_focus.set(entity, FocusCause::Pressed);
             }
             Interaction::Hovered => {
                 input_focus.set(entity, FocusCause::Pressed);
-                **text = "Hover".to_string();
                 *color = HOVERED_BUTTON.into();
-                *border_color = BorderColor::all(Color::WHITE);
-                button.set_changed();
             }
             Interaction::None => {
                 input_focus.clear();
-                **text = "Button".to_string();
                 *color = NORMAL_BUTTON.into();
-                *border_color = BorderColor::all(Color::BLACK);
             }
         }
+    }
+}
+
+pub fn connect(
+    mut state: ResMut<resources::State>,
+    server_host: ResMut<resources::ServerHost>,
+    server_port: ResMut<resources::ServerPort>,
+    mut commands: Commands,
+) {
+    let result = if let Ok(uri) = tungstenite::http::Uri::from_str(
+        format!("ws://{}:{}", server_host.0, server_port.0).as_str(),
+    ) {
+        if let Ok((websocket, _)) =
+            tungstenite::connect(tungstenite::ClientRequestBuilder::new(uri))
+        {
+            commands.insert_resource(resources::Connection::new(websocket));
+            true
+        } else {
+            false
+        }
+    } else {
+        false
+    };
+    if result {
+        *state.deref_mut() = resources::State::ShowGame;
+    } else {
+        *state.deref_mut() = resources::State::SetupConnectPage;
     }
 }
 
