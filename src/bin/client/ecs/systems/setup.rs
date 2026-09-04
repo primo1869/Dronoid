@@ -82,7 +82,7 @@ pub fn setup_connect_page(
         .spawn(Node {
             width: percent(100.),
             height: percent(100.),
-            justify_content: JustifyContent::Center,
+            // justify_content: JustifyContent::Center,
             align_items: AlignItems::Center,
             ..default()
         })
@@ -93,9 +93,9 @@ pub fn setup_connect_page(
                     Node {
                         padding: UiRect::all(Val::Percent(5.)),
                         // justify_content: JustifyContent::Center,
-                        align_items: AlignItems::FlexEnd,
+                        align_items: AlignItems::Baseline,
                         flex_direction: FlexDirection::Column,
-                        align_content: AlignContent::Center,
+                        // align_content: AlignContent::Center,
                         border: px(2.).all(),
                         border_radius: BorderRadius::all(Val::Percent(10.)),
                         ..default()
@@ -106,11 +106,12 @@ pub fn setup_connect_page(
                     // Host field
                     parent
                         .spawn(Node {
-                            padding: UiRect::all(Val::Percent(5.)),
-                            justify_content: JustifyContent::Center,
-                            align_items: AlignItems::Center,
+                            // // padding: UiRect::all(Val::Percent(5.)),
+                            // justify_content: JustifyContent::Center,
+                            // align_items: AlignItems::Center,
                             // border: px(2.).all(),
                             // border_radius: BorderRadius::all(Val::Percent(10.)),
+                            align_self: AlignSelf::Center,
                             ..default()
                         })
                         .with_children(|parent| {
@@ -126,7 +127,7 @@ pub fn setup_connect_page(
                                     width: px(400.),
                                     height: px(50.),
                                     border: px(2.).all(),
-                                    padding: px(8.).all(),
+                                    padding: px(8.).right(),
                                     border_radius: BorderRadius::all(Val::Percent(10.)),
                                     ..default()
                                 },
@@ -142,14 +143,15 @@ pub fn setup_connect_page(
                                 AutoFocus,
                             ));
                         });
-                    //
+                    // Player name field + connect button
                     parent
                         .spawn(Node {
-                            padding: UiRect::all(Val::Percent(5.)),
-                            justify_content: JustifyContent::Center,
-                            align_items: AlignItems::Center,
+                            // padding: UiRect::all(Val::Percent(5.)),
+                            // justify_content: JustifyContent::Center,
+                            // align_items: AlignItems::Center,
                             // border: px(2.).all(),
                             // border_radius: BorderRadius::all(Val::Percent(10.)),
+                            align_self: AlignSelf::Center,
                             ..default()
                         })
                         .with_children(|parent| {
@@ -184,9 +186,9 @@ pub fn setup_connect_page(
                                 components::ConnectButton,
                                 Node {
                                     width: px(200),
-                                    height: px(50),
+                                    // height: px(50),
                                     border: UiRect::all(px(5)),
-                                    justify_content: JustifyContent::Center,
+                                    // justify_content: JustifyContent::Center,
                                     align_items: AlignItems::Center,
                                     border_radius: BorderRadius::all(Val::Percent(10.)),
                                     margin: UiRect::left(Val::Px(10.)),
