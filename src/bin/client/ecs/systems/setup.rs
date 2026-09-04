@@ -53,6 +53,7 @@ pub fn setup_connect_page(
     mut state: ResMut<resources::State>,
     mut commands: Commands,
 ) {
+    // fixme : startup
     framepace_settings.limiter = Limiter::from_framerate(60.0);
     game_sprites.0.insert(
         dronoid::protocol::Kind::Mineral,
@@ -76,116 +77,8 @@ pub fn setup_connect_page(
         Transform::from_translation(Vec3::new(spawn_point.0.0, spawn_point.0.1, 0.)),
     ));
 
-    let mut welcome_menu = commands.spawn((
-        Node {
-            padding: UiRect::all(Val::Percent(5.)),
-            justify_content: JustifyContent::Center,
-            align_items: AlignItems::Center,
-            border: px(2.).all(),
-            border_radius: BorderRadius::all(Val::Percent(10.)),
-            ..default()
-        },
-        BorderColor::all(WHITE),
-    ));
-
-    let welcome_menu_id = welcome_menu
-        .with_children(|parent| {
-            parent
-                .spawn(Node {
-                    padding: UiRect::all(Val::Percent(5.)),
-                    justify_content: JustifyContent::Center,
-                    align_items: AlignItems::Center,
-                    border: px(2.).all(),
-                    border_radius: BorderRadius::all(Val::Percent(10.)),
-                    ..default()
-                })
-                .with_children(|parent| {
-                    parent.spawn((
-                        Node {
-                            margin: UiRect::right(Val::Px(10.0)),
-                            ..Default::default()
-                        },
-                        Text::new("Host"),
-                    ));
-                    parent.spawn((
-                        Node {
-                            width: px(400.),
-                            height: px(50.),
-                            border: px(2.).all(),
-                            padding: px(8.).all(),
-                            border_radius: BorderRadius::all(Val::Percent(10.)),
-                            ..default()
-                        },
-                        EditableText {
-                            max_characters: Some(8),
-                            ..default()
-                        },
-                        TextCursorStyle::default(),
-                        EditableTextFilter::new(|c| c.is_ascii() && c.is_ascii_graphic()),
-                        // TextFont::from_font_size(32.),
-                        BackgroundColor(DARK_SLATE_GRAY.into()),
-                        BorderColor::all(SLATE_300),
-                        AutoFocus,
-                    ));
-                });
-            parent
-                .spawn(Node {
-                    padding: UiRect::all(Val::Percent(5.)),
-                    justify_content: JustifyContent::Center,
-                    align_items: AlignItems::Center,
-                    border: px(2.).all(),
-                    border_radius: BorderRadius::all(Val::Percent(10.)),
-                    ..default()
-                })
-                .with_children(|parent| {
-                    parent.spawn((
-                        Node {
-                            margin: UiRect::right(Val::Px(10.0)),
-                            ..Default::default()
-                        },
-                        Text::new("Nickname"),
-                    ));
-                    parent.spawn((
-                        Node {
-                            width: px(400.),
-                            height: px(50.),
-                            border: px(2.).all(),
-                            padding: px(8.).all(),
-                            border_radius: BorderRadius::all(Val::Percent(10.)),
-                            ..default()
-                        },
-                        EditableText {
-                            max_characters: Some(8),
-                            ..default()
-                        },
-                        TextCursorStyle::default(),
-                        EditableTextFilter::new(|c| c.is_ascii_alphabetic()),
-                        // TextFont::from_font_size(32.),
-                        BackgroundColor(DARK_SLATE_GRAY.into()),
-                        BorderColor::all(SLATE_300),
-                        AutoFocus,
-                    ));
-                    parent.spawn((
-                        components::ConnectButton,
-                        Node {
-                            width: px(200),
-                            height: px(50),
-                            border: UiRect::all(px(5)),
-                            justify_content: JustifyContent::Center,
-                            align_items: AlignItems::Center,
-                            border_radius: BorderRadius::all(Val::Percent(10.)),
-                            margin: UiRect::left(Val::Px(10.)),
-                            ..default()
-                        },
-                        BorderColor::all(Color::WHITE),
-                        BackgroundColor(Color::BLACK),
-                        children![(Text::new("Connect"), TextColor(Color::srgb(0.9, 0.9, 0.9)),)],
-                    ));
-                });
-        })
-        .id();
-
     commands
+        // whole window rectangle
         .spawn(Node {
             width: percent(100.),
             height: percent(100.),
@@ -193,7 +86,122 @@ pub fn setup_connect_page(
             align_items: AlignItems::Center,
             ..default()
         })
-        .add_child(welcome_menu_id);
+        .with_children(|parent| {
+            // central rectangle
+            parent
+                .spawn((
+                    Node {
+                        padding: UiRect::all(Val::Percent(5.)),
+                        // justify_content: JustifyContent::Center,
+                        align_items: AlignItems::FlexEnd,
+                        flex_direction: FlexDirection::Column,
+                        align_content: AlignContent::Center,
+                        border: px(2.).all(),
+                        border_radius: BorderRadius::all(Val::Percent(10.)),
+                        ..default()
+                    },
+                    BorderColor::all(WHITE),
+                ))
+                .with_children(|parent| {
+                    // Host field
+                    parent
+                        .spawn(Node {
+                            padding: UiRect::all(Val::Percent(5.)),
+                            justify_content: JustifyContent::Center,
+                            align_items: AlignItems::Center,
+                            // border: px(2.).all(),
+                            // border_radius: BorderRadius::all(Val::Percent(10.)),
+                            ..default()
+                        })
+                        .with_children(|parent| {
+                            parent.spawn((
+                                Node {
+                                    margin: UiRect::right(Val::Px(10.0)),
+                                    ..Default::default()
+                                },
+                                Text::new("Host"),
+                            ));
+                            parent.spawn((
+                                Node {
+                                    width: px(400.),
+                                    height: px(50.),
+                                    border: px(2.).all(),
+                                    padding: px(8.).all(),
+                                    border_radius: BorderRadius::all(Val::Percent(10.)),
+                                    ..default()
+                                },
+                                EditableText {
+                                    max_characters: Some(8),
+                                    ..default()
+                                },
+                                TextCursorStyle::default(),
+                                EditableTextFilter::new(|c| c.is_ascii() && c.is_ascii_graphic()),
+                                // TextFont::from_font_size(32.),
+                                BackgroundColor(DARK_SLATE_GRAY.into()),
+                                BorderColor::all(SLATE_300),
+                                AutoFocus,
+                            ));
+                        });
+                    //
+                    parent
+                        .spawn(Node {
+                            padding: UiRect::all(Val::Percent(5.)),
+                            justify_content: JustifyContent::Center,
+                            align_items: AlignItems::Center,
+                            // border: px(2.).all(),
+                            // border_radius: BorderRadius::all(Val::Percent(10.)),
+                            ..default()
+                        })
+                        .with_children(|parent| {
+                            parent.spawn((
+                                Node {
+                                    margin: UiRect::right(Val::Px(10.0)),
+                                    ..Default::default()
+                                },
+                                Text::new("Nickname"),
+                            ));
+                            parent.spawn((
+                                Node {
+                                    // width: px(400.),
+                                    // height: px(50.),
+                                    border: px(2.).all(),
+                                    padding: px(8.).all(),
+                                    border_radius: BorderRadius::all(Val::Percent(10.)),
+                                    ..default()
+                                },
+                                EditableText {
+                                    max_characters: Some(8),
+                                    visible_width: Some(30.),
+                                    ..default()
+                                },
+                                TextCursorStyle::default(),
+                                EditableTextFilter::new(|c| c.is_ascii_alphabetic()),
+                                // TextFont::from_font_size(32.),
+                                BackgroundColor(DARK_SLATE_GRAY.into()),
+                                BorderColor::all(SLATE_300),
+                            ));
+                            parent.spawn((
+                                components::ConnectButton,
+                                Node {
+                                    width: px(200),
+                                    height: px(50),
+                                    border: UiRect::all(px(5)),
+                                    justify_content: JustifyContent::Center,
+                                    align_items: AlignItems::Center,
+                                    border_radius: BorderRadius::all(Val::Percent(10.)),
+                                    margin: UiRect::left(Val::Px(10.)),
+                                    ..default()
+                                },
+                                BorderColor::all(Color::WHITE),
+                                BackgroundColor(Color::BLACK),
+                                children![(
+                                    Text::new("Connect"),
+                                    TextColor(Color::srgb(0.9, 0.9, 0.9)),
+                                )],
+                            ));
+                        });
+                });
+        });
 
     *state.deref_mut() = resources::State::ShowConnectPage;
 }

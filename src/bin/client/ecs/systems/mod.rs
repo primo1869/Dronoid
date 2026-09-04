@@ -59,8 +59,8 @@ const HOVERED_BUTTON: Color = Color::srgb(0.25, 0.25, 0.25);
 
 pub fn show_connect_page(
     mut input_focus: ResMut<InputFocus>,
-    server_host: ResMut<resources::ServerHost>,
-    server_port: ResMut<resources::ServerPort>,
+    mut server_host: ResMut<resources::ServerHost>,
+    mut server_port: ResMut<resources::ServerPort>,
     mut interaction_query: Query<
         (
             Entity,
