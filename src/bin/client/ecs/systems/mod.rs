@@ -1,10 +1,11 @@
 use bevy::{
-    input_focus::{FocusCause, InputFocus},
+    input_focus::{FocusCause, FocusGained, InputFocus},
     prelude::*,
-    text::TextSection,
+    text::{EditableText, TextSection},
 };
 use bevy_ecs::{
     entity::Entity,
+    event::Trigger,
     query::With,
     system::{Query, ResMut},
 };
@@ -14,6 +15,14 @@ use tokio_tungstenite::tungstenite;
 use crate::ecs::{components::ConnectButton, resources};
 
 pub mod setup;
+
+pub fn on_focus(
+    event: On<FocusGained>,
+    query: Query<(Entity, &mut EditableText, &mut Interaction)>,
+) {
+    let (entity, editable_text, interaction) = query.get(event.entity).unwrap();
+    // editable_text.
+}
 
 // fn read_server_message(
 //     mut entities_query: Query<&mut Transform, With<Sprite>>,
@@ -53,6 +62,12 @@ pub mod setup;
 //     }
 // }
 
+// fn receive_event_system(mut reader: MessageReader<FocusGained>) {
+//     for event in reader.read() {
+//         println!("Received: {}", event.message);
+//     }
+// }
+
 const NORMAL_BUTTON: Color = Color::srgb(0.15, 0.15, 0.15);
 const HOVERED_BUTTON: Color = Color::srgb(0.25, 0.25, 0.25);
 // const PRESSED_BUTTON: Color = Color::srgb(0.35, 0.75, 0.35);
@@ -83,7 +98,7 @@ pub fn show_connect_page(
                 input_focus.set(entity, FocusCause::Pressed);
             }
             Interaction::Hovered => {
-                input_focus.set(entity, FocusCause::Pressed);
+                // input_focus.set(entity, FocusCause::Pressed);
                 *color = HOVERED_BUTTON.into();
             }
             Interaction::None => {

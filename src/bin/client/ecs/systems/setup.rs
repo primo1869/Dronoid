@@ -5,7 +5,7 @@ use bevy::{
         css::{DARK_SLATE_GRAY, RED, WHITE},
         tailwind::SLATE_300,
     },
-    input_focus::{self, AutoFocus},
+    input_focus::{self, AutoFocus, FocusedInput},
     prelude::*,
     text::{EditableText, EditableTextFilter, TextCursorStyle},
     window::{PrimaryWindow, WindowResolution},
@@ -19,6 +19,9 @@ use bevy_framepace::{FramepaceSettings, Limiter};
 use display_info::DisplayInfo;
 
 use crate::ecs::{components, resources};
+
+#[derive(Message)]
+struct MyFocus;
 
 pub fn setup_display(
     mut q_window: Query<&mut Window, With<PrimaryWindow>>,
@@ -122,6 +125,7 @@ pub fn setup_connect_page(
                                     max_characters: Some(62),
                                     ..default()
                                 },
+                                Interaction::default(),
                                 TextCursorStyle {
                                     color: Color::WHITE,
                                     ..Default::default()
@@ -149,6 +153,8 @@ pub fn setup_connect_page(
                                     max_characters: Some(5),
                                     ..default()
                                 },
+                                Interaction::default(),
+                                FocusedInput::<MyFocus>,
                                 TextCursorStyle::default(),
                                 EditableTextFilter::new(|c| {
                                     c.is_ascii() && c.is_ascii_graphic() && c.is_numeric()
@@ -182,6 +188,7 @@ pub fn setup_connect_page(
                                     visible_width: Some(15.),
                                     ..default()
                                 },
+                                Interaction::default(),
                                 TextCursorStyle::default(),
                                 EditableTextFilter::new(|c| c.is_ascii_alphabetic()),
                                 BackgroundColor(DARK_SLATE_GRAY.into()),
@@ -189,12 +196,12 @@ pub fn setup_connect_page(
                             ));
                             parent.spawn((
                                 components::ConnectButton,
-                                Button,
                                 Interaction::default(),
                                 Node {
                                     flex_grow: 1.,
                                     border: UiRect::all(px(2)),
                                     align_items: AlignItems::Center,
+                                    justify_content: JustifyContent::Center,
                                     border_radius: BorderRadius::all(Val::Percent(10.)),
                                     ..default()
                                 },

@@ -20,12 +20,10 @@ fn main() -> anyhow::Result<()> {
     dronoid::init_logger();
 
     App::new()
-        // -------------------- PLUGINS
         .add_plugins((
             DefaultPlugins.build().disable::<LogPlugin>(),
             bevy_framepace::FramepacePlugin,
         ))
-        // -------------------- RESOURCES
         .insert_resource(resources::Entities::default())
         .insert_resource(ClearColor(Color::srgb(0., 0., 0.)))
         .insert_resource(resources::GameSprites::default())
@@ -34,7 +32,6 @@ fn main() -> anyhow::Result<()> {
         .insert_resource(resources::SpawnPoint::default())
         .insert_resource(resources::State::default())
         .insert_resource(resources::CurrentDisplayResolution::default())
-        // -------------------- SYSTEMS
         .add_systems(PreStartup, systems::setup::setup_display)
         .add_systems(
             Update,
@@ -64,7 +61,7 @@ fn main() -> anyhow::Result<()> {
                 resources::State::ShowGame,
             )),
         )
-        // -------------------- RUN
+        // .add_observer(systems::on_focus)
         .run();
     anyhow::Ok(())
 }
