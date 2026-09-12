@@ -1,0 +1,31 @@
+name: SERVER BUILD
+
+on:
+  workflow_dispatch: 
+  push:
+    branches:
+      - main
+    paths:
+      - 'library/**'
+      - 'common/**'
+      - 'server/**'
+      - '.github/workflows/server-build.yml'
+      - '.github/workflows/server-tests.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: server
+      - run: cargo build --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: server-binary
+          path: target/release/

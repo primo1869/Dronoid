@@ -1,0 +1,18 @@
+[package]
+name = "dronoid-common"
+version = "0.1.0"
+authors = ["Primo <primo.contact@mail.fr>"]
+edition = '2024'
+
+[dependencies.colored]
+version = "3.1.1"
+default-features = false
+
+[dependencies.tracing]
+version = "0.1.44"
+default-features = false
+
+[dependencies.tracing-subscriber]
+version = "0.3.23"
+default-features = false
+features = ["env-filter", "registry"]

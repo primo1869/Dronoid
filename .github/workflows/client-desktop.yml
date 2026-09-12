@@ -1,0 +1,31 @@
+name: CLIENT DESKTOP
+
+on:
+  workflow_dispatch: 
+  push:
+    branches:
+      - main
+    paths:
+      - 'library/**'
+      - 'common/**'
+      - 'client/**'
+      - '.github/workflows/client-desktop.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y libwayland-dev libasound2-dev libudev-dev libxcb1-dev
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: client
+      - run: cargo build --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: client-desktop-binary
+          path: target/release/

@@ -1,0 +1,89 @@
+[package]
+name = "dronoid-server"
+version = "0.1.0"
+authors = ["Primo <primo.contact@mail.fr>"]
+edition = '2024'
+
+[dependencies.dronoid]
+version = "0.1.0"
+path = "../library"
+
+[dependencies.dronoid-common]
+version = "0.1.0"
+path = "../common"
+
+[dependencies.anyhow]
+version = "1.0.104"
+default-features = false
+
+[dependencies.bevy]
+version = "0.19.1"
+default-features = false
+
+[dependencies.bevy_app]
+version = "0.19.1"
+default-features = false
+
+[dependencies.bevy_ecs]
+version = "0.19.1"
+default-features = false
+
+[dependencies.bson]
+version = "3.1.0"
+default-features = false
+features = ["serde"]
+
+[dependencies.clap]
+version = "4.6.6"
+default-features = false
+features = ["derive", "std", "help", "usage"]
+
+[dependencies.crossbeam-channel]
+version = "0.5.17"
+default-features = false
+features = ["std"]
+
+[dependencies.futures]
+version = "0.3.34"
+default-features = false
+
+[dependencies.noise]
+version = "0.9.0"
+default-features = false
+
+[dependencies.rand]
+version = "0.10.2"
+default-features = false
+
+[dependencies.rapier2d]
+version = "0.35.3"
+
+[dependencies.serde]
+version = "1.0.229"
+default-features = false
+
+[dependencies.thiserror]
+version = "2.0.20"
+default-features = false
+
+[dependencies.tokio]
+version = "1.53.1"
+default-features = false
+features = [
+    "time",
+    "macros",
+    "rt",
+    "sync",
+    "test-util",
+    "rt-multi-thread",
+    "signal",
+]
+
+[dependencies.tokio-tungstenite]
+version = "0.30.0"
+default-features = false
+features = ["handshake", "connect"]
+
+[dependencies.tracing]
+version = "0.1.44"
+default-features = false
