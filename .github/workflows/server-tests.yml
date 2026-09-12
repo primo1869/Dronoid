@@ -1,0 +1,30 @@
+name: SERVER TESTS
+
+on:
+  workflow_run:
+    workflows: ["Server Build"]
+    types:
+      - completed
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: server
+      - uses: actions/download-artifact@v4
+        with:
+          name: server-binary
+          path: target/release
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - run: cargo test --test integ
+        env:
+          RUST_LOG: dronoid=trace,debug
